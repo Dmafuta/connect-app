@@ -30,7 +30,10 @@ jobs:
 
       - name: Run backend tests
         working-directory: backend
-        run: bash mvnw test -q
+        run: |
+          sed -i 's/\r//' mvnw
+          chmod +x mvnw
+          ./mvnw test -q
         env:
           DB_PASSWORD: test_password
           JWT_SECRET: dGVzdC1zZWNyZXQtZm9yLWNpLW9ubHktbm90LXVzZWQtaW4tcHJvZA==

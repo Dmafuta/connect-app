@@ -3,6 +3,7 @@
 
 # Shell scripts must always be LF (Linux will execute these)
 *.sh text eol=lf
+mvnw text eol=lf
 
 # Windows batch files keep CRLF
 *.cmd text eol=crlf
