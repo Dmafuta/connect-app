@@ -1,0 +1,21 @@
+# Normalize line endings to LF in the repository
+* text=auto eol=lf
+
+# Shell scripts must always be LF (Linux will execute these)
+*.sh text eol=lf
+
+# Windows batch files keep CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binaries — no conversion
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.lockb binary

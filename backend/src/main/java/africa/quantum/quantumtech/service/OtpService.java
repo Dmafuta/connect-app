@@ -1,0 +1,117 @@
+package africa.quantum.quantumtech.service;
+
+import africa.quantum.quantumtech.model.OtpRecord;
+import africa.quantum.quantumtech.notification.EmailService;
+import africa.quantum.quantumtech.notification.SmsService;
+import africa.quantum.quantumtech.repository.OtpRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+
+@Service
+public class OtpService {
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    private final OtpRepository otpRepository;
+    private final EmailService  emailService;
+    private final SmsService    smsService;
+
+    @Value("${otp.expiry.minutes:5}")
+    private int expiryMinutes;
+
+    @Value("${otp.length:6}")
+    private int otpLength;
+
+    public OtpService(OtpRepository otpRepository,
+                      EmailService emailService,
+                      SmsService smsService) {
+        this.otpRepository = otpRepository;
+        this.emailService  = emailService;
+        this.smsService    = smsService;
+    }
+
+    /**
+     * Send OTP via EMAIL (default).
+     *
+     * @param email   recipient email address
+     * @param purpose LOGIN | VERIFY_EMAIL | PASSWORD_RESET
+     */
+    @Transactional
+    public void sendOtp(String email, String purpose) {
+        String code = createAndPersistOtp(email, purpose);
+        emailService.sendEmail(
+            email,
+            "Your QuantumConnect verification code",
+            EmailService.otpBody(code, expiryMinutes)
+        );
+    }
+
+    /**
+     * Send OTP via SMS through Africa's Talking.
+     *
+     * @param phone   recipient phone number in E.164 format (e.g. +254712345678)
+     * @param purpose LOGIN | VERIFY_EMAIL | PASSWORD_RESET
+     */
+    @Transactional
+    public void sendOtpViaSms(String phone, String purpose) {
+        String code = createAndPersistOtp(phone, purpose);
+        smsService.sendSms(phone, SmsService.otpSmsBody(code, expiryMinutes));
+    }
+
+    /**
+     * Verify an OTP regardless of the channel it was sent through.
+     * The {@code target} is the email or phone number the OTP was issued to.
+     *
+     * @return true if valid — code is consumed immediately on success
+     */
+    @Transactional
+    public boolean verifyOtp(String target, String purpose, String code) {
+        Optional<OtpRecord> opt = otpRepository.findValid(target, purpose, code, Instant.now());
+        if (opt.isEmpty()) return false;
+
+        OtpRecord record = opt.get();
+        record.setUsed(true);
+        otpRepository.save(record);
+        return true;
+    }
+
+    // ── Housekeeping ──────────────────────────────────────────────────────────
+
+    /** Purge used/expired OTP records every hour to keep the table lean. */
+    @Scheduled(fixedRate = 3_600_000)
+    @Transactional
+    public void purgeExpired() {
+        otpRepository.deleteExpiredBefore(Instant.now().minus(1, ChronoUnit.HOURS));
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    /** Invalidates previous codes, generates a new one and persists it. */
+    private String createAndPersistOtp(String target, String purpose) {
+        otpRepository.invalidatePrevious(target, purpose);
+
+        String code = generateCode();
+
+        OtpRecord record = new OtpRecord();
+        record.setEmail(target);        // reusing email field for phone when channel=SMS
+        record.setCode(code);
+        record.setPurpose(purpose);
+        record.setCreatedAt(Instant.now());
+        record.setExpiresAt(Instant.now().plus(expiryMinutes, ChronoUnit.MINUTES));
+        otpRepository.save(record);
+
+        return code;
+    }
+
+    private String generateCode() {
+        int bound = (int) Math.pow(10, otpLength);
+        return String.format("%0" + otpLength + "d", RANDOM.nextInt(bound));
+    }
+}
