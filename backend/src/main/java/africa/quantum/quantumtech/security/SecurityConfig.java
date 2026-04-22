@@ -61,7 +61,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/auth/**",
-                    "/api/notifications/otp/**"
+                    "/api/notifications/otp/**",
+                    "/actuator/health"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
