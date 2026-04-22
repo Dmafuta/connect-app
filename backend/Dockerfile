@@ -5,7 +5,7 @@ WORKDIR /app
 # Copy Maven wrapper and pom first (layer cache — only re-downloads deps when pom changes)
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -q
+RUN sed -i 's/\r//' mvnw && chmod +x mvnw && ./mvnw dependency:go-offline -q
 
 # Copy source and build
 COPY src ./src

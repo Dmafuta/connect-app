@@ -28,12 +28,12 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      - name: Install Maven
+        run: sudo apt-get install -y maven -q
+
       - name: Run backend tests
         working-directory: backend
-        run: |
-          sed -i 's/\r//' mvnw
-          chmod +x mvnw
-          ./mvnw test -q
+        run: mvn test -q
         env:
           DB_PASSWORD: test_password
           JWT_SECRET: dGVzdC1zZWNyZXQtZm9yLWNpLW9ubHktbm90LXVzZWQtaW4tcHJvZA==
