@@ -20,195 +20,153 @@ import heroMeter from "@/assets/hero-meter.jpg";
 /* ── Hero Carousel ─────────────────────────────────────────────────────────── */
 function HeroCarousel() {
   const [current, setCurrent] = useState(0);
-  const [paused, setPaused] = useState(false);
 
+  // Auto-rotate every 6 s — no pause on hover so it keeps going
   useEffect(() => {
-    if (paused) return;
-    const id = setInterval(() => setCurrent((p) => (p + 1) % 2), 6500);
+    const id = setInterval(() => setCurrent((p) => (p + 1) % 2), 6000);
     return () => clearInterval(id);
-  }, [paused]);
+  }, []);
 
   return (
-    <section
-      className="relative overflow-hidden border-b border-border bg-brand-black text-primary-foreground"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
+    <section className="relative overflow-hidden border-b border-border bg-brand-black text-primary-foreground" style={{ minHeight: "600px" }}>
+
       {/* ── Slide 0 : split layout with meter image ── */}
-      <div
-        className="transition-opacity duration-700"
-        style={{ display: current === 0 ? "block" : "none" }}
-      >
+      <div className={`absolute inset-0 transition-opacity duration-700 ${current === 0 ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"}`}>
+        {/* background image */}
         <div className="absolute inset-0 opacity-60">
           <img
             src={heroMeter}
-            alt="QuantumConnect IoT smart utility meter with red digital display"
-            width={1920}
-            height={1080}
+            alt="QuantumConnect IoT smart utility meter"
             className="h-full w-full object-cover object-right"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-brand-black via-brand-black/85 to-transparent" />
         </div>
+        {/* content */}
+        <div className="relative flex h-full items-center">
+          <div className="mx-auto w-full max-w-7xl px-6 py-20 lg:py-28">
+            <div className="max-w-2xl lg:max-w-[58%]">
+              <p className="mb-6 inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.3em] text-brand-red">
+                <span className="h-px w-8 bg-brand-red" />
+                Smart Utility Intelligence
+              </p>
+              <h1 className="font-display text-5xl font-semibold leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
+                Every drop, watt and therm —{" "}
+                <span className="text-brand-red">measured in real time.</span>
+              </h1>
+              <p className="mt-6 max-w-xl text-base text-primary-foreground/75 sm:text-lg">
+                QuantumConnect unifies IoT smart meters, machine learning and cloud
+                analytics for water, electricity and gas utilities. Cut losses,
+                forecast demand and bill with precision.
+              </p>
+              <div className="mt-10 flex flex-wrap items-center gap-4">
+                <a href="#solutions">
+                  <Button className="h-12 rounded-none bg-brand-red px-8 font-display text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground hover:bg-brand-red/90">
+                    Explore solutions <ArrowRight className="ml-1" />
+                  </Button>
+                </a>
+                <a href="#how" className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground/80 hover:text-primary-foreground">
+                  See how it works →
+                </a>
+              </div>
+              <dl className="mt-14 grid max-w-lg grid-cols-3 gap-8 border-t border-primary-foreground/15 pt-8">
+                {[
+                  { k: "2.4M+", v: "Meters online" },
+                  { k: "38%",   v: "NRW reduction" },
+                  { k: "99.95%",v: "Uptime SLA" },
+                ].map((s) => (
+                  <div key={s.v}>
+                    <dt className="font-display text-3xl font-semibold text-brand-red">{s.k}</dt>
+                    <dd className="mt-1 text-xs uppercase tracking-[0.18em] text-primary-foreground/70">{s.v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-24 lg:grid-cols-12 lg:py-36">
-          <div className="lg:col-span-7">
-            <p className="mb-6 inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.3em] text-brand-red">
-              <span className="h-px w-8 bg-brand-red" />
-              Smart Utility Intelligence
-            </p>
-            <h1 className="font-display text-5xl font-semibold leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
-              Every drop, watt and therm —{" "}
-              <span className="text-brand-red">measured in real time.</span>
+      {/* ── Slide 1 : "The Future of Utility Intelligence" ── */}
+      <div className={`absolute inset-0 transition-opacity duration-700 ${current === 1 ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"}`}>
+        {/* animated background */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ width:"80vw", height:"80vw", borderRadius:"50%",
+              background:"radial-gradient(ellipse at center, hsl(354 100% 45% / 0.18) 0%, transparent 70%)" }} />
+          <svg className="absolute inset-0 h-full w-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
+            <defs><pattern id="g1" width="60" height="60" patternUnits="userSpaceOnUse">
+              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5" />
+            </pattern></defs>
+            <rect width="100%" height="100%" fill="url(#g1)" />
+          </svg>
+          <svg className="absolute inset-0 h-full w-full opacity-[0.07]" viewBox="0 0 1440 700" preserveAspectRatio="xMidYMid slice">
+            <line x1="0" y1="0" x2="720" y2="700" stroke="white" strokeWidth="0.8" />
+            <line x1="1440" y1="0" x2="720" y2="700" stroke="white" strokeWidth="0.8" />
+            <line x1="0" y1="700" x2="720" y2="0" stroke="white" strokeWidth="0.8" />
+            <line x1="1440" y1="700" x2="720" y2="0" stroke="white" strokeWidth="0.8" />
+          </svg>
+          <style>{`@keyframes qpulse{75%,100%{transform:scale(1.6);opacity:0}}`}</style>
+          {[{cx:"18%",cy:"30%",r:100,d:"0s"},{cx:"82%",cy:"25%",r:70,d:"0.8s"},{cx:"70%",cy:"72%",r:90,d:"1.4s"}].map((p,i)=>(
+            <svg key={i} className="absolute inset-0 h-full w-full">
+              <circle cx={p.cx} cy={p.cy} r={p.r} fill="none" stroke="hsl(354 100% 45%)" strokeWidth="0.5" opacity="0.25"
+                style={{animation:`qpulse 3s cubic-bezier(0,0,0.2,1) infinite`,animationDelay:p.d}} />
+            </svg>
+          ))}
+        </div>
+        {/* content */}
+        <div className="relative flex h-full items-center justify-center text-center">
+          <div className="mx-auto w-full max-w-4xl px-6 py-20 lg:py-28">
+            <div className="mb-8 inline-flex items-center gap-2 border border-brand-red/40 bg-brand-red/10 px-4 py-1.5">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-red" />
+              <span className="font-display text-[10px] font-semibold uppercase tracking-[0.3em] text-brand-red">IoT · ML · Smart Metering</span>
+            </div>
+            <h1 className="font-display text-5xl font-semibold leading-[1.0] tracking-tight sm:text-7xl lg:text-8xl">
+              The Future of<br />
+              <span className="text-brand-red">Utility Intelligence</span>
             </h1>
-            <p className="mt-6 max-w-xl text-base text-primary-foreground/75 sm:text-lg">
-              QuantumConnect unifies IoT smart meters, machine learning and cloud
-              analytics for water, electricity and gas utilities. Cut losses,
-              forecast demand and bill with precision.
+            <p className="mx-auto mt-8 max-w-2xl text-base text-primary-foreground/60 sm:text-lg">
+              QuantumConnect unifies smart metering for water, electricity, and gas
+              into one AI-powered platform — delivering real-time visibility,
+              predictive analytics, and automated anomaly detection at scale.
             </p>
-            <div className="mt-10 flex flex-wrap items-center gap-4">
-              <a href="#solutions">
+            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link to="/auth">
                 <Button className="h-12 rounded-none bg-brand-red px-8 font-display text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground hover:bg-brand-red/90">
-                  Explore solutions <ArrowRight className="ml-1" />
+                  Start Monitoring <ArrowRight className="ml-1" />
+                </Button>
+              </Link>
+              <a href="#how">
+                <Button variant="outline" className="h-12 rounded-none border-primary-foreground/30 bg-transparent px-8 font-display text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground hover:bg-primary-foreground/10">
+                  See How It Works
                 </Button>
               </a>
-              <a href="#how" className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground/80 hover:text-primary-foreground">
-                See how it works →
-              </a>
             </div>
-            <dl className="mt-16 grid max-w-2xl grid-cols-3 gap-8 border-t border-primary-foreground/15 pt-8">
-              {[
-                { k: "2.4M+", v: "Meters online" },
-                { k: "38%",   v: "NRW reduction" },
-                { k: "99.95%",v: "Uptime SLA" },
-              ].map((s) => (
-                <div key={s.v}>
-                  <dt className="font-display text-3xl font-semibold text-brand-red">{s.k}</dt>
-                  <dd className="mt-1 text-xs uppercase tracking-[0.18em] text-primary-foreground/70">{s.v}</dd>
-                </div>
-              ))}
+          </div>
+        </div>
+      </div>
+
+      {/* spacer so the section has height (slides are absolute) */}
+      <div className="invisible pointer-events-none">
+        <div className="mx-auto w-full max-w-7xl px-6 py-20 lg:py-28">
+          <div className="max-w-2xl">
+            <p className="mb-6 text-[11px]">Smart Utility Intelligence</p>
+            <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl">Every drop, watt and therm — measured in real time.</h1>
+            <p className="mt-6 text-base sm:text-lg">placeholder</p>
+            <div className="mt-10 h-12" />
+            <dl className="mt-14 grid grid-cols-3 gap-8 border-t pt-8">
+              {["a","b","c"].map(k => <div key={k}><dt className="text-3xl">0</dt><dd className="mt-1 text-xs">label</dd></div>)}
             </dl>
           </div>
         </div>
       </div>
 
-      {/* ── Slide 1 : "The Future of Utility Intelligence" centered design ── */}
-      <div
-        className="transition-opacity duration-700"
-        style={{ display: current === 1 ? "block" : "none" }}
-      >
-        {/* animated background */}
-        <div className="pointer-events-none absolute inset-0">
-          {/* red radial glow */}
-          <div
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-            style={{
-              width: "80vw", height: "80vw", borderRadius: "50%",
-              background: "radial-gradient(ellipse at center, hsl(354 100% 45% / 0.18) 0%, transparent 70%)",
-            }}
-          />
-          {/* grid */}
-          <svg className="absolute inset-0 h-full w-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="g1" width="60" height="60" patternUnits="userSpaceOnUse">
-                <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#g1)" />
-          </svg>
-          {/* diagonal lines */}
-          <svg className="absolute inset-0 h-full w-full opacity-[0.07]" viewBox="0 0 1440 700" preserveAspectRatio="xMidYMid slice">
-            <line x1="0"    y1="0"   x2="720"  y2="700" stroke="white" strokeWidth="0.8" />
-            <line x1="1440" y1="0"   x2="720"  y2="700" stroke="white" strokeWidth="0.8" />
-            <line x1="0"    y1="700" x2="720"  y2="0"   stroke="white" strokeWidth="0.8" />
-            <line x1="1440" y1="700" x2="720"  y2="0"   stroke="white" strokeWidth="0.8" />
-          </svg>
-          {/* pulse rings */}
-          <style>{`@keyframes qpulse{75%,100%{transform:scale(1.6);opacity:0}}`}</style>
-          {[
-            { cx:"18%", cy:"30%", r:100, delay:"0s" },
-            { cx:"82%", cy:"25%", r:70,  delay:"0.8s" },
-            { cx:"70%", cy:"72%", r:90,  delay:"1.4s" },
-          ].map((p, i) => (
-            <svg key={i} className="absolute inset-0 h-full w-full">
-              <circle cx={p.cx} cy={p.cy} r={p.r} fill="none"
-                stroke="hsl(354 100% 45%)" strokeWidth="0.5" opacity="0.25"
-                style={{ animation:`qpulse 3s cubic-bezier(0,0,0.2,1) infinite`, animationDelay:p.delay }}
-              />
-            </svg>
-          ))}
-        </div>
-
-        <div className="relative mx-auto max-w-7xl px-6 py-28 text-center lg:py-44">
-          {/* badge */}
-          <div className="mb-8 inline-flex items-center gap-2 border border-brand-red/40 bg-brand-red/10 px-4 py-1.5">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-red" />
-            <span className="font-display text-[10px] font-semibold uppercase tracking-[0.3em] text-brand-red">
-              IoT · ML · Smart Metering
-            </span>
-          </div>
-
-          <h1 className="font-display text-5xl font-semibold leading-[1.0] tracking-tight sm:text-7xl lg:text-8xl">
-            The Future of
-            <br />
-            <span className="text-brand-red">Utility Intelligence</span>
-          </h1>
-
-          <p className="mx-auto mt-8 max-w-2xl text-base text-primary-foreground/60 sm:text-lg">
-            QuantumConnect unifies smart metering for water, electricity, and gas
-            into one AI-powered platform — delivering real-time visibility,
-            predictive analytics, and automated anomaly detection at scale.
-          </p>
-
-          <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link to="/auth">
-              <Button className="h-12 rounded-none bg-brand-red px-8 font-display text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground hover:bg-brand-red/90">
-                Start Monitoring <ArrowRight className="ml-1" />
-              </Button>
-            </Link>
-            <a href="#how">
-              <Button variant="outline" className="h-12 rounded-none border-primary-foreground/30 bg-transparent px-8 font-display text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground hover:bg-primary-foreground/10">
-                See How It Works
-              </Button>
-            </a>
-          </div>
-
-          <div className="mt-16 flex flex-col items-center gap-2 text-primary-foreground/30">
-            <span className="text-[10px] uppercase tracking-[0.3em]">Scroll</span>
-            <div className="h-8 w-px animate-bounce bg-brand-red/50" />
-          </div>
-        </div>
-      </div>
-
       {/* ── Dot indicators ── */}
-      <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
+      <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
         {[0, 1].map((i) => (
-          <button
-            key={i}
-            onClick={() => setCurrent(i)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              current === i ? "w-8 bg-brand-red" : "w-1.5 bg-white/30 hover:bg-white/50"
-            }`}
+          <button key={i} onClick={() => setCurrent(i)}
+            className={`h-1.5 rounded-full transition-all duration-300 ${current === i ? "w-8 bg-brand-red" : "w-1.5 bg-white/30 hover:bg-white/50"}`}
           />
         ))}
       </div>
-
-      {/* ── Arrow controls ── */}
-      <button
-        onClick={() => setCurrent((p) => (p - 1 + 2) % 2)}
-        className="absolute left-4 top-1/2 z-20 -translate-y-1/2 flex h-9 w-9 items-center justify-center border border-white/20 bg-black/30 text-white/50 backdrop-blur-sm transition-all hover:border-white/50 hover:text-white"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-      </button>
-      <button
-        onClick={() => setCurrent((p) => (p + 1) % 2)}
-        className="absolute right-4 top-1/2 z-20 -translate-y-1/2 flex h-9 w-9 items-center justify-center border border-white/20 bg-black/30 text-white/50 backdrop-blur-sm transition-all hover:border-white/50 hover:text-white"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      </button>
     </section>
   );
 }
