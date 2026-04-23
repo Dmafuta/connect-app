@@ -22,6 +22,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 public class SecurityConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
@@ -65,6 +66,7 @@ public class SecurityConfig {
                     "/api/mpesa/callback",
                     "/actuator/health"
                 ).permitAll()
+                .requestMatchers("/api/users/**", "/api/meters/**", "/api/readings/**", "/api/alerts/**").authenticated()
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authProvider())

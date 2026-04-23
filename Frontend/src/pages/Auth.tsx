@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 const API = `${import.meta.env.VITE_API_URL}/api/auth`;
 
@@ -11,26 +12,29 @@ const Auth = () => {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       const endpoint = mode === "login" ? `${API}/login` : `${API}/register`;
+      const body = mode === "login"
+        ? { email, password }
+        : { email, password, firstName, lastName };
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "Authentication failed");
-      }
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("email", data.email);
+      if (!res.ok) throw new Error(data.message || "Authentication failed");
+      login({ token: data.token, email: data.email, role: data.role, fullName: data.fullName ?? "" });
       navigate("/dashboard");
     } catch (error: any) {
       toast({
@@ -111,6 +115,20 @@ const Auth = () => {
           </p>
 
           <form onSubmit={handleSubmit} className="mt-10 space-y-5">
+            {mode === "register" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">First name</Label>
+                  <Input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Jane" required
+                    className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">Last name</Label>
+                  <Input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Doe"
+                    className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0" />
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label
                 htmlFor="email"

@@ -4,6 +4,7 @@ import africa.quantum.quantumtech.dto.AuthResponse;
 import africa.quantum.quantumtech.dto.ErrorResponse;
 import africa.quantum.quantumtech.dto.LoginRequest;
 import africa.quantum.quantumtech.dto.RegisterRequest;
+import africa.quantum.quantumtech.model.Role;
 import africa.quantum.quantumtech.model.User;
 import africa.quantum.quantumtech.notification.EmailService;
 import africa.quantum.quantumtech.repository.UserRepository;
@@ -45,17 +46,19 @@ public class AuthController {
         User user = new User();
         user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
+        if (request.firstName() != null) user.setFirstName(request.firstName());
+        if (request.lastName()  != null) user.setLastName(request.lastName());
+        if (request.phone()     != null) user.setPhone(request.phone());
+        user.setRole(Role.CUSTOMER);
         userRepository.save(user);
-        String token = jwtUtil.generateToken(user.getEmail());
 
-        // Send branded welcome email asynchronously
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
         emailService.sendEmail(
             user.getEmail(),
             "Welcome to QuantumConnect",
             emailService.welcomeBody(user.getEmail())
         );
-
-        return ResponseEntity.ok(new AuthResponse(token, user.getEmail()));
+        return ResponseEntity.ok(new AuthResponse(token, user.getEmail(), user.getRole().name(), user.getFullName()));
     }
 
     @PostMapping("/login")
@@ -67,7 +70,8 @@ public class AuthController {
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(401).body(new ErrorResponse("Invalid email or password"));
         }
-        String token = jwtUtil.generateToken(request.email());
-        return ResponseEntity.ok(new AuthResponse(token, request.email()));
+        User user = userRepository.findByEmail(request.email()).orElseThrow();
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        return ResponseEntity.ok(new AuthResponse(token, user.getEmail(), user.getRole().name(), user.getFullName()));
     }
 }

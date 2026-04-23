@@ -18,10 +18,6 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private long expiration;
 
-    /**
-     * Decodes the secret as Base64 if possible, otherwise uses raw bytes.
-     * This allows using the openssl-generated base64 secret directly.
-     */
     private SecretKey getKey() {
         try {
             byte[] keyBytes = Base64.getDecoder().decode(secret);
@@ -31,9 +27,10 @@ public class JwtUtil {
         }
     }
 
-    public String generateToken(String email) {
+    public String generateToken(String email, String role) {
         return Jwts.builder()
                 .subject(email)
+                .claim("role", role)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getKey())
@@ -47,6 +44,15 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+    }
+
+    public String extractRole(String token) {
+        return (String) Jwts.parser()
+                .verifyWith(getKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("role");
     }
 
     public boolean isTokenValid(String token) {

@@ -1,3 +1,3 @@
 package africa.quantum.quantumtech.dto;
 
-public record RegisterRequest(String email, String password) {}
+public record RegisterRequest(String email, String password, String firstName, String lastName, String phone) {}
