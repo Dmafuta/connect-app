@@ -62,6 +62,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/auth/**",
                     "/api/notifications/otp/**",
+                    "/api/mpesa/callback",
                     "/actuator/health"
                 ).permitAll()
                 .anyRequest().authenticated()
