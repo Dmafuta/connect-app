@@ -189,6 +189,210 @@ const HeroBackground = () => (
 );
 
 /* ══════════════════════════════════════════════
+   HERO CAROUSEL
+══════════════════════════════════════════════ */
+function HeroCarousel() {
+  const navigate = useNavigate();
+  const [current, setCurrent] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const SLIDES = 2;
+
+  useEffect(() => {
+    if (paused) return;
+    const id = setInterval(() => setCurrent(p => (p + 1) % SLIDES), 6500);
+    return () => clearInterval(id);
+  }, [paused]);
+
+  return (
+    <section
+      className="relative min-h-screen overflow-hidden"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* ── Slide 0 : Split layout (new design) ── */}
+      <div
+        className={cn(
+          "absolute inset-0 transition-opacity duration-1000",
+          current === 0 ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
+        )}
+      >
+        {/* dark base */}
+        <div className="absolute inset-0 bg-[hsl(0,0%,4%)]" />
+
+        {/* right-side image */}
+        <div className="absolute inset-y-0 right-0 w-full lg:w-[55%]">
+          <img
+            src="https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=1200&q=80&fit=crop"
+            alt="Smart metering infrastructure"
+            className="h-full w-full object-cover brightness-[0.35]"
+          />
+          {/* gradient fade to left */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[hsl(0,0%,4%)] via-[hsl(0,0%,4%)]/60 to-transparent" />
+          {/* subtle red tint on right edge */}
+          <div
+            className="absolute inset-0"
+            style={{ background: "radial-gradient(ellipse at 80% 50%, hsl(354,100%,45%,0.12) 0%, transparent 60%)" }}
+          />
+        </div>
+
+        {/* grid overlay */}
+        <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="grid-s0" width="60" height="60" patternUnits="userSpaceOnUse">
+              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid-s0)" />
+        </svg>
+
+        {/* text content */}
+        <div className="relative z-10 flex min-h-screen items-center">
+          <div className="mx-auto max-w-7xl w-full px-6 py-32 lg:py-0">
+            <div className="max-w-xl">
+              {/* eyebrow */}
+              <div className="mb-8 flex items-center gap-3">
+                <span className="h-px w-8 bg-brand-red" />
+                <span className="font-display text-xs font-semibold uppercase tracking-[0.3em] text-brand-red">
+                  Smart Utility Intelligence
+                </span>
+              </div>
+
+              {/* heading */}
+              <h1 className="font-display text-5xl font-bold leading-[1.05] tracking-tight text-white md:text-6xl lg:text-7xl">
+                Every drop, watt
+                <br />and therm —{" "}
+                <span className="text-brand-red">measured in real time.</span>
+              </h1>
+
+              <p className="mt-7 max-w-md text-sm leading-relaxed text-white/55 md:text-base">
+                QuantumConnect unifies IoT smart meters, machine learning and cloud
+                analytics for water, electricity and gas utilities. Cut losses,
+                forecast demand and bill with precision.
+              </p>
+
+              <div className="mt-10 flex flex-wrap items-center gap-4">
+                <button
+                  onClick={() => navigate("/auth")}
+                  className="group flex items-center gap-3 bg-brand-red px-7 py-3.5 font-display text-sm font-semibold uppercase tracking-widest text-white transition-all hover:brightness-110"
+                >
+                  Explore Solutions
+                  <IconArrowRight />
+                </button>
+                <a
+                  href="#how-it-works"
+                  className="font-display text-sm font-semibold uppercase tracking-widest text-white/60 transition-colors hover:text-white"
+                >
+                  See How It Works →
+                </a>
+              </div>
+
+              {/* stats row */}
+              <div className="mt-12 flex flex-wrap gap-10 border-t border-white/10 pt-8">
+                {[
+                  { val: "2.4M+", label: "Meters Online" },
+                  { val: "38%",   label: "NRW Reduction" },
+                  { val: "99.95%",label: "Uptime SLA" },
+                ].map((s) => (
+                  <div key={s.label}>
+                    <p className="font-display text-2xl font-bold text-brand-red">{s.val}</p>
+                    <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Slide 1 : Original centered design ── */}
+      <div
+        className={cn(
+          "absolute inset-0 transition-opacity duration-1000",
+          current === 1 ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
+        )}
+      >
+        <HeroBackground />
+        <div className="relative z-10 flex min-h-screen items-center">
+          <div className="mx-auto max-w-7xl w-full px-6 py-32 text-center">
+            <div className="mb-8 inline-flex items-center gap-2 border border-brand-red/30 bg-brand-red/10 px-4 py-1.5">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-red" />
+              <span className="font-display text-xs font-semibold uppercase tracking-[0.3em] text-brand-red">
+                IoT · ML · Smart Metering
+              </span>
+            </div>
+
+            <h1 className="font-display text-5xl font-semibold leading-[1.0] tracking-tight text-white md:text-7xl lg:text-8xl">
+              The Future of
+              <br />
+              <span className="text-brand-red">Utility Intelligence</span>
+            </h1>
+
+            <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-white/60 md:text-lg">
+              QuantumConnect unifies smart metering for water, electricity, and gas
+              into one AI-powered platform — delivering real-time visibility,
+              predictive analytics, and automated anomaly detection at scale.
+            </p>
+
+            <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <button
+                onClick={() => navigate("/auth")}
+                className="group flex items-center gap-3 bg-brand-red px-8 py-4 font-display text-sm font-semibold uppercase tracking-widest text-white transition-all hover:brightness-110"
+              >
+                Start Monitoring
+                <span className="transition-transform group-hover:translate-x-1"><IconArrowRight /></span>
+              </button>
+              <a
+                href="#how-it-works"
+                className="flex items-center gap-3 border border-white/20 px-8 py-4 font-display text-sm font-semibold uppercase tracking-widest text-white/70 transition-all hover:border-white/50 hover:text-white"
+              >
+                See How It Works
+              </a>
+            </div>
+
+            <div className="mt-20 flex flex-col items-center gap-2 text-white/30">
+              <span className="text-[10px] uppercase tracking-[0.3em]">Scroll</span>
+              <div className="h-8 w-px animate-bounce bg-brand-red/50" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Dot indicators ── */}
+      <div className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
+        {Array.from({ length: SLIDES }).map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrent(i)}
+            className={cn(
+              "h-1.5 rounded-full transition-all duration-300",
+              current === i ? "w-8 bg-brand-red" : "w-1.5 bg-white/30 hover:bg-white/50"
+            )}
+          />
+        ))}
+      </div>
+
+      {/* ── Arrow controls ── */}
+      <button
+        onClick={() => setCurrent(p => (p - 1 + SLIDES) % SLIDES)}
+        className="absolute left-4 top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center border border-white/20 bg-black/30 text-white/60 transition-all hover:border-white/50 hover:text-white backdrop-blur-sm"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+      <button
+        onClick={() => setCurrent(p => (p + 1) % SLIDES)}
+        className="absolute right-4 top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center border border-white/20 bg-black/30 text-white/60 transition-all hover:border-white/50 hover:text-white backdrop-blur-sm"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
    NAVBAR
 ══════════════════════════════════════════════ */
 function Navbar() {
@@ -417,53 +621,8 @@ const Landing = () => {
     <div className="min-h-screen bg-[hsl(0,0%,4%)] text-white antialiased">
       <Navbar />
 
-      {/* ── HERO ── */}
-      <section className="relative flex min-h-screen items-center overflow-hidden">
-        <HeroBackground />
-        <div className="relative z-10 mx-auto max-w-7xl px-6 py-32 text-center">
-          {/* badge */}
-          <div className="mb-8 inline-flex items-center gap-2 border border-brand-red/30 bg-brand-red/10 px-4 py-1.5">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-red" />
-            <span className="font-display text-xs font-semibold uppercase tracking-[0.3em] text-brand-red">
-              IoT · ML · Smart Metering
-            </span>
-          </div>
-
-          <h1 className="font-display text-5xl font-semibold leading-[1.0] tracking-tight text-white md:text-7xl lg:text-8xl">
-            The Future of
-            <br />
-            <span className="text-brand-red">Utility Intelligence</span>
-          </h1>
-
-          <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-white/60 md:text-lg">
-            QuantumConnect unifies smart metering for water, electricity, and gas
-            into one AI-powered platform — delivering real-time visibility,
-            predictive analytics, and automated anomaly detection at scale.
-          </p>
-
-          <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <button
-              onClick={() => navigate("/auth")}
-              className="group flex items-center gap-3 bg-brand-red px-8 py-4 font-display text-sm font-semibold uppercase tracking-widest text-white transition-all hover:brightness-110"
-            >
-              Start Monitoring
-              <span className="transition-transform group-hover:translate-x-1"><IconArrowRight /></span>
-            </button>
-            <a
-              href="#how-it-works"
-              className="flex items-center gap-3 border border-white/20 px-8 py-4 font-display text-sm font-semibold uppercase tracking-widest text-white/70 transition-all hover:border-white/50 hover:text-white"
-            >
-              See How It Works
-            </a>
-          </div>
-
-          {/* scroll hint */}
-          <div className="mt-20 flex flex-col items-center gap-2 text-white/30">
-            <span className="text-[10px] uppercase tracking-[0.3em]">Scroll</span>
-            <div className="h-8 w-px animate-bounce bg-brand-red/50" />
-          </div>
-        </div>
-      </section>
+      {/* ── HERO CAROUSEL ── */}
+      <HeroCarousel />
 
       {/* ── STATS STRIP ── */}
       <section ref={statsRef.ref} className="border-y border-white/10 bg-[hsl(0,0%,6%)]">
