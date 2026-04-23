@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,37 +17,28 @@ import {
 } from "lucide-react";
 import heroMeter from "@/assets/hero-meter.jpg";
 
-const Landing = () => {
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          <div className="flex items-center gap-2.5">
-            <span className="relative flex h-8 w-8 items-center justify-center">
-              <span className="absolute inset-0 rounded-full border-2 border-brand-red" />
-              <span className="absolute inset-1.5 rounded-full border-2 border-brand-black" />
-            </span>
-            <span className="font-display text-lg font-semibold tracking-tight">
-              QuantumConnect
-            </span>
-          </div>
-          <nav className="hidden items-center gap-8 text-sm md:flex">
-            <a href="#solutions" className="text-muted-foreground hover:text-foreground">Solutions</a>
-            <a href="#technology" className="text-muted-foreground hover:text-foreground">Technology</a>
-            <a href="#how" className="text-muted-foreground hover:text-foreground">How it works</a>
-            <a href="#impact" className="text-muted-foreground hover:text-foreground">Impact</a>
-          </nav>
-          <Link to="/auth">
-            <Button className="h-10 rounded-none bg-brand-black font-display text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground hover:bg-brand-red">
-              Sign in
-            </Button>
-          </Link>
-        </div>
-      </header>
+/* ── Hero Carousel ─────────────────────────────────────────────────────────── */
+function HeroCarousel() {
+  const [current, setCurrent] = useState(0);
+  const [paused, setPaused] = useState(false);
 
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border bg-brand-black text-primary-foreground">
+  useEffect(() => {
+    if (paused) return;
+    const id = setInterval(() => setCurrent((p) => (p + 1) % 2), 6500);
+    return () => clearInterval(id);
+  }, [paused]);
+
+  return (
+    <section
+      className="relative overflow-hidden border-b border-border bg-brand-black text-primary-foreground"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* ── Slide 0 : split layout with meter image ── */}
+      <div
+        className="transition-opacity duration-700"
+        style={{ display: current === 0 ? "block" : "none" }}
+      >
         <div className="absolute inset-0 opacity-60">
           <img
             src={heroMeter}
@@ -79,31 +71,179 @@ const Landing = () => {
                   Explore solutions <ArrowRight className="ml-1" />
                 </Button>
               </a>
-              <a
-                href="#how"
-                className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground/80 hover:text-primary-foreground"
-              >
+              <a href="#how" className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground/80 hover:text-primary-foreground">
                 See how it works →
               </a>
             </div>
-
             <dl className="mt-16 grid max-w-2xl grid-cols-3 gap-8 border-t border-primary-foreground/15 pt-8">
               {[
                 { k: "2.4M+", v: "Meters online" },
-                { k: "38%", v: "NRW reduction" },
-                { k: "99.95%", v: "Uptime SLA" },
+                { k: "38%",   v: "NRW reduction" },
+                { k: "99.95%",v: "Uptime SLA" },
               ].map((s) => (
                 <div key={s.v}>
                   <dt className="font-display text-3xl font-semibold text-brand-red">{s.k}</dt>
-                  <dd className="mt-1 text-xs uppercase tracking-[0.18em] text-primary-foreground/70">
-                    {s.v}
-                  </dd>
+                  <dd className="mt-1 text-xs uppercase tracking-[0.18em] text-primary-foreground/70">{s.v}</dd>
                 </div>
               ))}
             </dl>
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* ── Slide 1 : "The Future of Utility Intelligence" centered design ── */}
+      <div
+        className="transition-opacity duration-700"
+        style={{ display: current === 1 ? "block" : "none" }}
+      >
+        {/* animated background */}
+        <div className="pointer-events-none absolute inset-0">
+          {/* red radial glow */}
+          <div
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{
+              width: "80vw", height: "80vw", borderRadius: "50%",
+              background: "radial-gradient(ellipse at center, hsl(354 100% 45% / 0.18) 0%, transparent 70%)",
+            }}
+          />
+          {/* grid */}
+          <svg className="absolute inset-0 h-full w-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="g1" width="60" height="60" patternUnits="userSpaceOnUse">
+                <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#g1)" />
+          </svg>
+          {/* diagonal lines */}
+          <svg className="absolute inset-0 h-full w-full opacity-[0.07]" viewBox="0 0 1440 700" preserveAspectRatio="xMidYMid slice">
+            <line x1="0"    y1="0"   x2="720"  y2="700" stroke="white" strokeWidth="0.8" />
+            <line x1="1440" y1="0"   x2="720"  y2="700" stroke="white" strokeWidth="0.8" />
+            <line x1="0"    y1="700" x2="720"  y2="0"   stroke="white" strokeWidth="0.8" />
+            <line x1="1440" y1="700" x2="720"  y2="0"   stroke="white" strokeWidth="0.8" />
+          </svg>
+          {/* pulse rings */}
+          <style>{`@keyframes qpulse{75%,100%{transform:scale(1.6);opacity:0}}`}</style>
+          {[
+            { cx:"18%", cy:"30%", r:100, delay:"0s" },
+            { cx:"82%", cy:"25%", r:70,  delay:"0.8s" },
+            { cx:"70%", cy:"72%", r:90,  delay:"1.4s" },
+          ].map((p, i) => (
+            <svg key={i} className="absolute inset-0 h-full w-full">
+              <circle cx={p.cx} cy={p.cy} r={p.r} fill="none"
+                stroke="hsl(354 100% 45%)" strokeWidth="0.5" opacity="0.25"
+                style={{ animation:`qpulse 3s cubic-bezier(0,0,0.2,1) infinite`, animationDelay:p.delay }}
+              />
+            </svg>
+          ))}
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-6 py-28 text-center lg:py-44">
+          {/* badge */}
+          <div className="mb-8 inline-flex items-center gap-2 border border-brand-red/40 bg-brand-red/10 px-4 py-1.5">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-red" />
+            <span className="font-display text-[10px] font-semibold uppercase tracking-[0.3em] text-brand-red">
+              IoT · ML · Smart Metering
+            </span>
+          </div>
+
+          <h1 className="font-display text-5xl font-semibold leading-[1.0] tracking-tight sm:text-7xl lg:text-8xl">
+            The Future of
+            <br />
+            <span className="text-brand-red">Utility Intelligence</span>
+          </h1>
+
+          <p className="mx-auto mt-8 max-w-2xl text-base text-primary-foreground/60 sm:text-lg">
+            QuantumConnect unifies smart metering for water, electricity, and gas
+            into one AI-powered platform — delivering real-time visibility,
+            predictive analytics, and automated anomaly detection at scale.
+          </p>
+
+          <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link to="/auth">
+              <Button className="h-12 rounded-none bg-brand-red px-8 font-display text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground hover:bg-brand-red/90">
+                Start Monitoring <ArrowRight className="ml-1" />
+              </Button>
+            </Link>
+            <a href="#how">
+              <Button variant="outline" className="h-12 rounded-none border-primary-foreground/30 bg-transparent px-8 font-display text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground hover:bg-primary-foreground/10">
+                See How It Works
+              </Button>
+            </a>
+          </div>
+
+          <div className="mt-16 flex flex-col items-center gap-2 text-primary-foreground/30">
+            <span className="text-[10px] uppercase tracking-[0.3em]">Scroll</span>
+            <div className="h-8 w-px animate-bounce bg-brand-red/50" />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Dot indicators ── */}
+      <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
+        {[0, 1].map((i) => (
+          <button
+            key={i}
+            onClick={() => setCurrent(i)}
+            className={`h-1.5 rounded-full transition-all duration-300 ${
+              current === i ? "w-8 bg-brand-red" : "w-1.5 bg-white/30 hover:bg-white/50"
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* ── Arrow controls ── */}
+      <button
+        onClick={() => setCurrent((p) => (p - 1 + 2) % 2)}
+        className="absolute left-4 top-1/2 z-20 -translate-y-1/2 flex h-9 w-9 items-center justify-center border border-white/20 bg-black/30 text-white/50 backdrop-blur-sm transition-all hover:border-white/50 hover:text-white"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+      <button
+        onClick={() => setCurrent((p) => (p + 1) % 2)}
+        className="absolute right-4 top-1/2 z-20 -translate-y-1/2 flex h-9 w-9 items-center justify-center border border-white/20 bg-black/30 text-white/50 backdrop-blur-sm transition-all hover:border-white/50 hover:text-white"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+    </section>
+  );
+}
+
+const Landing = () => {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-8 w-8 items-center justify-center">
+              <span className="absolute inset-0 rounded-full border-2 border-brand-red" />
+              <span className="absolute inset-1.5 rounded-full border-2 border-brand-black" />
+            </span>
+            <span className="font-display text-lg font-semibold tracking-tight">
+              QuantumConnect
+            </span>
+          </div>
+          <nav className="hidden items-center gap-8 text-sm md:flex">
+            <a href="#solutions" className="text-muted-foreground hover:text-foreground">Solutions</a>
+            <a href="#technology" className="text-muted-foreground hover:text-foreground">Technology</a>
+            <a href="#how" className="text-muted-foreground hover:text-foreground">How it works</a>
+            <a href="#impact" className="text-muted-foreground hover:text-foreground">Impact</a>
+          </nav>
+          <Link to="/auth">
+            <Button className="h-10 rounded-none bg-brand-black font-display text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground hover:bg-brand-red">
+              Sign in
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero Carousel */}
+      <HeroCarousel />
 
       {/* Solutions */}
       <section id="solutions" className="border-b border-border">
