@@ -139,6 +139,10 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
             set -e
+
+            # Allow unprivileged containers to bind to ports 80/443
+            sudo sysctl -w net.ipv4.ip_unprivileged_port_start=0
+
             cd /opt/quantumconnect
 
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
