@@ -140,20 +140,34 @@ jobs:
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
             set -e
 
-            # Allow unprivileged containers to bind to ports 80/443
-            sudo sysctl -w net.ipv4.ip_unprivileged_port_start=0
-
             cd /opt/quantumconnect
 
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
-              -u ${{ github.actor }} --password-stdin
+            # Update image tags to the newly built SHA
+            sudo sed -i "s|BACKEND_IMAGE=.*|BACKEND_IMAGE=${{ env.BACKEND_IMAGE }}:${{ github.sha }}|" .env
+            sudo sed -i "s|FRONTEND_IMAGE=.*|FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|" .env
 
-            export BACKEND_IMAGE=${{ env.BACKEND_IMAGE }}:${{ github.sha }}
-            export FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+            # Pull new images (packages are public, no login needed)
+            docker compose pull frontend backend
 
-            docker compose pull
-            docker compose up -d --remove-orphans
+            # Restart only app containers — nginx and postgres are unaffected
+            docker compose up -d --no-deps --remove-orphans frontend backend
+
+            # Reload nginx config in case nginx.conf changed
+            docker exec quantumconnect-nginx-1 nginx -s reload
+
+            # Prune old images
             docker image prune -f
 
             echo "Deployment complete — commit ${{ github.sha }}"
           ENDSSH
+
+      - name: Smoke test
+        run: |
+          sleep 15
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" https://quantumconnect.africa/)
+          echo "HTTPS status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Smoke test failed — site returned HTTP $STATUS"
+            exit 1
+          fi
+          echo "Smoke test passed."
