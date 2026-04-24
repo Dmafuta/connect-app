@@ -4,6 +4,7 @@ import africa.quantum.quantumtech.mpesa.config.MpesaConfig;
 import africa.quantum.quantumtech.mpesa.dto.*;
 import africa.quantum.quantumtech.mpesa.model.MpesaTransaction;
 import africa.quantum.quantumtech.mpesa.repository.MpesaTransactionRepository;
+import africa.quantum.quantumtech.notification.SmsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
@@ -28,13 +29,16 @@ public class MpesaService {
     private final MpesaConfig config;
     private final RestTemplate restTemplate;
     private final MpesaTransactionRepository transactionRepo;
+    private final SmsService smsService;
 
     public MpesaService(MpesaConfig config,
                         RestTemplate restTemplate,
-                        MpesaTransactionRepository transactionRepo) {
+                        MpesaTransactionRepository transactionRepo,
+                        SmsService smsService) {
         this.config = config;
         this.restTemplate = restTemplate;
         this.transactionRepo = transactionRepo;
+        this.smsService = smsService;
     }
 
     // ── OAuth Token ───────────────────────────────────────────────────────────
@@ -161,9 +165,30 @@ public class MpesaService {
             tx.setStatus(MpesaTransaction.TransactionStatus.SUCCESS);
             log.info("Payment successful — receipt={} checkoutRequestId={}",
                     tx.getMpesaReceiptNumber(), checkoutRequestId);
+
+            // SMS confirmation to the paying phone number
+            if (tx.getPhoneNumber() != null) {
+                String amount = tx.getAmount() != null ? tx.getAmount().toPlainString() : "—";
+                try {
+                    smsService.sendSms("+" + tx.getPhoneNumber(),
+                        SmsService.paymentConfirmedSmsBody(amount, tx.getMpesaReceiptNumber()));
+                } catch (Exception e) {
+                    log.warn("SMS confirmation failed for receipt {}: {}", tx.getMpesaReceiptNumber(), e.getMessage());
+                }
+            }
         } else {
             tx.setStatus(MpesaTransaction.TransactionStatus.FAILED);
             log.warn("Payment failed — resultCode={} desc={}", cb.getResultCode(), cb.getResultDesc());
+
+            // SMS failure notice
+            if (tx.getPhoneNumber() != null && tx.getAmount() != null) {
+                try {
+                    smsService.sendSms("+" + tx.getPhoneNumber(),
+                        SmsService.paymentFailedSmsBody(tx.getAmount().toPlainString()));
+                } catch (Exception e) {
+                    log.warn("SMS failure notice failed: {}", e.getMessage());
+                }
+            }
         }
 
         transactionRepo.save(tx);

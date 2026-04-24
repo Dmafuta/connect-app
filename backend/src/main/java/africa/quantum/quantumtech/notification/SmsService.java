@@ -125,6 +125,32 @@ public class SmsService {
      */
     public static String welcomeSmsBody() {
         return "Welcome to QuantumConnect! Your smart metering account is ready. " +
-               "Sign in at https://billing.quantumconnect.africa";
+               "Sign in at https://quantumconnect.africa";
+    }
+
+    /** Alert notification to customer whose meter triggered an alert */
+    public static String alertCustomerSmsBody(String alertType, String severity, String meterSerial) {
+        return String.format("QuantumConnect ALERT [%s]: A %s alert has been raised on your meter %s. " +
+               "Our team has been notified. Visit https://quantumconnect.africa for details.",
+               severity, alertType.replace("_", " ").toLowerCase(), meterSerial);
+    }
+
+    /** Alert notification to assigned technician */
+    public static String alertTechnicianSmsBody(String alertType, String severity, String meterSerial, String location) {
+        String loc = (location != null && !location.isBlank()) ? " at " + location : "";
+        return String.format("QuantumConnect: %s alert on meter %s%s. Severity: %s. Please respond promptly.",
+               alertType.replace("_", " "), meterSerial, loc, severity);
+    }
+
+    /** M-Pesa payment confirmation SMS */
+    public static String paymentConfirmedSmsBody(String amount, String receipt) {
+        return String.format("QuantumConnect: Payment of KES %s confirmed. Receipt: %s. " +
+               "Thank you for your payment.", amount, receipt);
+    }
+
+    /** Payment failed SMS */
+    public static String paymentFailedSmsBody(String amount) {
+        return String.format("QuantumConnect: Your payment of KES %s was not completed. " +
+               "Please try again at https://quantumconnect.africa or contact support.", amount);
     }
 }
