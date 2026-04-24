@@ -33,6 +33,12 @@ public class MeterReadingController {
         this.jwtUtil           = jwtUtil;
     }
 
+    @GetMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
+    public List<MeterReading> allReadings() {
+        return readingRepository.findAll();
+    }
+
     @GetMapping("/meter/{meterId}")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
     public List<MeterReading> byMeter(@PathVariable Long meterId) {

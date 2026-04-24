@@ -101,4 +101,19 @@ public class UserController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    /** Change own password — any authenticated user */
+    @PatchMapping("/me/password")
+    public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String authHeader,
+                                            @RequestBody Map<String, String> body) {
+        String email = jwtUtil.extractEmail(authHeader.substring(7));
+        return userRepository.findByEmail(email).map(u -> {
+            if (!passwordEncoder.matches(body.get("currentPassword"), u.getPassword())) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Current password is incorrect"));
+            }
+            u.setPassword(passwordEncoder.encode(body.get("newPassword")));
+            userRepository.save(u);
+            return ResponseEntity.ok(Map.of("message", "Password updated"));
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }

@@ -1,43 +1,158 @@
-import { UserCircle, Gauge, AlertTriangle, CreditCard, Activity, Wrench } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useApi } from "@/hooks/useApi";
+import StatCard from "@/components/dashboard/StatCard";
+import {
+  UserCircle, Gauge, AlertTriangle, CreditCard,
+  Droplets, Zap, Flame, ArrowRight, CheckCircle2, Clock,
+} from "lucide-react";
+import { BarChart, Bar, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
-const stats = [
-  { label: "Customers",     value: "—", icon: UserCircle,    color: "text-brand-red" },
-  { label: "Meters",        value: "—", icon: Gauge,         color: "text-blue-500" },
-  { label: "Open Alerts",   value: "—", icon: AlertTriangle, color: "text-amber-500" },
-  { label: "Revenue (MTD)", value: "—", icon: CreditCard,    color: "text-emerald-500" },
-  { label: "Readings Today",value: "—", icon: Activity,      color: "text-purple-500" },
-  { label: "Technicians",   value: "—", icon: Wrench,        color: "text-orange-500" },
-];
+const PIE_COLORS = ["#3b82f6", "#f59e0b", "#10b981"];
+
+function ago(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+const SEVERITY_BADGE: Record<string, string> = {
+  CRITICAL: "bg-rose-100 text-rose-700",
+  HIGH:     "bg-orange-100 text-orange-700",
+  MEDIUM:   "bg-amber-100 text-amber-700",
+  LOW:      "bg-slate-100 text-slate-600",
+};
 
 export default function AdminOverview() {
+  const api = useApi();
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [meters,    setMeters]    = useState<any[]>([]);
+  const [alerts,    setAlerts]    = useState<any[]>([]);
+  const [loading,   setLoading]   = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      api.get<any[]>("/api/users/customers"),
+      api.get<any[]>("/api/meters"),
+      api.get<any[]>("/api/alerts"),
+    ]).then(([c, m, a]) => {
+      setCustomers(c); setMeters(m); setAlerts(a);
+    }).finally(() => setLoading(false));
+  }, []);
+
+  const openAlerts   = alerts.filter(a => !a.resolved);
+  const activeMeters = meters.filter(m => m.status === "ACTIVE");
+
+  const meterByType = ["WATER","ELECTRICITY","GAS"].map(t => ({
+    name: t, value: meters.filter(m => m.type === t).length,
+  }));
+
+  if (loading) return <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">Loading…</div>;
+
   return (
-    <div>
-      <div className="mb-8">
-        <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-brand-red">Admin</p>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Utility Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Manage your customers, meters, and billing.</p>
-      </div>
-
-      <div className="grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-3">
-        {stats.map(s => (
-          <div key={s.label} className="bg-background p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">{s.label}</p>
-              <s.icon className={`h-4 w-4 ${s.color}`} />
-            </div>
-            <p className={`mt-3 font-display text-3xl font-semibold ${s.color}`}>{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-px grid gap-px bg-border lg:grid-cols-2">
-        <div className="bg-background p-6">
-          <h2 className="font-display text-sm font-semibold uppercase tracking-[0.15em]">Open Alerts</h2>
-          <p className="mt-6 text-sm text-muted-foreground">No open alerts.</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-brand-red">Admin</p>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Utility Dashboard</h1>
         </div>
-        <div className="bg-background p-6">
-          <h2 className="font-display text-sm font-semibold uppercase tracking-[0.15em]">Recent Readings</h2>
-          <p className="mt-6 text-sm text-muted-foreground">No readings recorded yet.</p>
+        <div className="flex items-center gap-2 rounded-none border border-border px-3 py-1.5 text-xs text-muted-foreground">
+          <Clock className="h-3.5 w-3.5" /> Live
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Customers"     value={customers.length}    sub="registered accounts"  accent="text-brand-red"  icon={UserCircle} />
+        <StatCard label="Active Meters" value={activeMeters.length} sub={`${meters.length} total`} accent="text-blue-600"   icon={Gauge} />
+        <StatCard label="Open Alerts"   value={openAlerts.length}   sub="unresolved"           accent={openAlerts.length > 0 ? "text-rose-600" : "text-emerald-600"} icon={AlertTriangle} />
+        <StatCard label="Meter Types"   value={3}                   sub="Water, Electricity, Gas" accent="text-emerald-600" icon={CreditCard} />
+      </div>
+
+      {/* Meters by type bar */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="rounded-none border border-border bg-card p-5">
+          <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.15em]">Meters by Type</h3>
+          <div className="space-y-3">
+            {[
+              { type: "WATER",       color: "#3b82f6", icon: Droplets },
+              { type: "ELECTRICITY", color: "#f59e0b", icon: Zap },
+              { type: "GAS",         color: "#10b981", icon: Flame },
+            ].map(({ type, color, icon: Icon }) => {
+              const count = meters.filter(m => m.type === type).length;
+              const pct = meters.length ? (count / meters.length) * 100 : 0;
+              return (
+                <div key={type}>
+                  <div className="mb-1 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <Icon className="h-3.5 w-3.5" style={{ color }} />
+                      <span className="capitalize">{type.toLowerCase()}</span>
+                    </div>
+                    <span className="font-semibold">{count}</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-muted">
+                    <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Open alerts */}
+        <div className="rounded-none border border-border bg-card p-5 lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-display text-sm font-semibold uppercase tracking-[0.15em]">Open Alerts</h3>
+            <a href="/dashboard/alerts" className="flex items-center gap-1 text-xs text-brand-red hover:underline">
+              View all <ArrowRight className="h-3 w-3" />
+            </a>
+          </div>
+          {openAlerts.length === 0 ? (
+            <div className="flex items-center gap-2 rounded-none border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              <CheckCircle2 className="h-4 w-4" /> No open alerts — system nominal.
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {openAlerts.slice(0, 5).map((a: any) => (
+                <div key={a.id} className="flex items-center justify-between py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{a.alertType?.replace("_"," ")}</p>
+                    <p className="text-xs text-muted-foreground">{a.message ?? "—"} · Meter #{a.meter?.id ?? a.meterId}</p>
+                  </div>
+                  <div className="ml-4 flex shrink-0 items-center gap-3">
+                    <span className={`rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${SEVERITY_BADGE[a.severity] ?? ""}`}>
+                      {a.severity}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{ago(a.createdAt)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="rounded-none border border-border bg-card p-5">
+        <h3 className="mb-4 font-display text-sm font-semibold uppercase tracking-[0.15em]">Quick Actions</h3>
+        <div className="grid gap-1 sm:grid-cols-2">
+          {[
+            { label: "Add a new customer", href: "/dashboard/customers",  icon: UserCircle },
+            { label: "Register a meter",   href: "/dashboard/meters",     icon: Gauge },
+            { label: "Review alerts",      href: "/dashboard/alerts",     icon: AlertTriangle },
+            { label: "View transactions",  href: "/dashboard/transactions",icon: CreditCard },
+          ].map(item => (
+            <a key={item.href} href={item.href}
+              className="flex items-center justify-between rounded-none px-3 py-2.5 text-sm hover:bg-muted transition-colors">
+              <div className="flex items-center gap-3">
+                <item.icon className="h-4 w-4 text-muted-foreground" />
+                {item.label}
+              </div>
+              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+            </a>
+          ))}
         </div>
       </div>
     </div>

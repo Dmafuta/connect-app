@@ -19,7 +19,6 @@ import java.util.Map;
 public class MpesaController {
 
     private static final Logger log = LoggerFactory.getLogger(MpesaController.class);
-
     private final MpesaService mpesaService;
 
     public MpesaController(MpesaService mpesaService) {
@@ -95,5 +94,14 @@ public class MpesaController {
     @GetMapping("/transactions/user/{userId}")
     public ResponseEntity<List<MpesaTransaction>> getUserTransactions(@PathVariable Long userId) {
         return ResponseEntity.ok(mpesaService.getUserTransactions(userId));
+    }
+
+    /**
+     * GET /api/mpesa/transactions/all
+     * Returns all transactions — admin/super-admin view.
+     */
+    @GetMapping("/transactions/all")
+    public ResponseEntity<List<MpesaTransaction>> getAllTransactions() {
+        return ResponseEntity.ok(mpesaService.getAllTransactions());
     }
 }

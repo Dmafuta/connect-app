@@ -185,6 +185,11 @@ public class MpesaService {
         return transactionRepo.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
+    /** Returns all transactions — admin/super-admin view. */
+    public List<MpesaTransaction> getAllTransactions() {
+        return transactionRepo.findAll();
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /**
