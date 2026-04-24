@@ -33,6 +33,9 @@ public class User {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(nullable = false)
+    private boolean emailVerified = false;
+
     // ── Getters & Setters ──────────────────────────────────────────────────────
 
     public Long getId() { return id; }
@@ -57,6 +60,9 @@ public class User {
 
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+
+    public boolean isEmailVerified() { return emailVerified; }
+    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
 
     public String getFullName() {
         return (firstName + " " + lastName).trim();

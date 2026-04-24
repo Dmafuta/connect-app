@@ -66,6 +66,7 @@ public class SecurityConfig {
                     "/api/mpesa/callback",
                     "/actuator/health"
                 ).permitAll()
+                // verify-email is already covered by /api/auth/** above
                 .requestMatchers("/api/users/**", "/api/meters/**", "/api/readings/**", "/api/alerts/**").authenticated()
                 .anyRequest().authenticated()
             )

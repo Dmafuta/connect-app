@@ -9,11 +9,12 @@ import { useAuth } from "@/context/AuthContext";
 const API = `${import.meta.env.VITE_API_URL}/api/auth`;
 
 const Auth = () => {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "verify">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -23,6 +24,19 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      if (mode === "verify") {
+        const res = await fetch(`${API}/verify-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, code: otp }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Verification failed");
+        login({ token: data.token, email: data.email, role: data.role, fullName: data.fullName ?? "" });
+        navigate("/dashboard");
+        return;
+      }
+
       const endpoint = mode === "login" ? `${API}/login` : `${API}/register`;
       const body = mode === "login"
         ? { email, password }
@@ -33,12 +47,21 @@ const Auth = () => {
         body: JSON.stringify(body),
       });
       const data = await res.json();
+
+      // Email not verified — switch to OTP step
+      if ((res.status === 403 || data.verified === false) && data.email) {
+        setEmail(data.email);
+        setMode("verify");
+        toast({ title: "Check your email", description: data.message });
+        return;
+      }
+
       if (!res.ok) throw new Error(data.message || "Authentication failed");
       login({ token: data.token, email: data.email, role: data.role, fullName: data.fullName ?? "" });
       navigate("/dashboard");
     } catch (error: any) {
       toast({
-        title: mode === "login" ? "Sign in failed" : "Registration failed",
+        title: mode === "login" ? "Sign in failed" : mode === "register" ? "Registration failed" : "Verification failed",
         description: error.message,
         variant: "destructive",
       });
@@ -103,98 +126,101 @@ const Auth = () => {
           </div>
 
           <p className="mb-3 text-xs uppercase tracking-[0.25em] text-brand-red">
-            Secure access
+            {mode === "verify" ? "Email verification" : "Secure access"}
           </p>
           <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">
-            {mode === "login" ? "Welcome back." : "Create account."}
+            {mode === "login" ? "Welcome back." : mode === "register" ? "Create account." : "Verify email."}
           </h1>
           <p className="mt-3 text-sm text-muted-foreground">
             {mode === "login"
               ? "Enter your credentials to continue."
-              : "Register a new account to get started."}
+              : mode === "register"
+              ? "Register a new account to get started."
+              : `We sent a 6-digit code to ${email}. Enter it below to activate your account.`}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-10 space-y-5">
-            {mode === "register" && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">First name</Label>
-                  <Input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Jane" required
-                    className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">Last name</Label>
-                  <Input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Doe"
-                    className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0" />
-                </div>
+            {mode === "verify" ? (
+              <div className="space-y-2">
+                <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">
+                  Verification code
+                </Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={otp}
+                  onChange={e => setOtp(e.target.value.replace(/\D/g, ""))}
+                  required
+                  className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-center text-2xl font-semibold tracking-[0.5em] text-foreground focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
               </div>
+            ) : (
+              <>
+                {mode === "register" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">First name</Label>
+                      <Input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Jane" required
+                        className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">Last name</Label>
+                      <Input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Doe"
+                        className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0" />
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">
+                    Email
+                  </Label>
+                  <Input id="email" type="email" placeholder="you@quantumconnect.com" value={email}
+                    onChange={(e) => setEmail(e.target.value)} required
+                    className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">
+                    Password
+                  </Label>
+                  <Input id="password" type="password" placeholder="••••••••••" value={password}
+                    onChange={(e) => setPassword(e.target.value)} required minLength={6}
+                    className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
+              </>
             )}
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70"
-              >
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@quantumconnect.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            </div>
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="password"
-                className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70"
-              >
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              disabled={loading}
+            <Button type="submit" disabled={loading}
               className="mt-4 h-12 w-full rounded-none bg-brand-black font-display text-sm font-semibold uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-brand-red"
             >
               {loading
-                ? mode === "login" ? "Signing in…" : "Registering…"
-                : mode === "login" ? "Sign in →" : "Register →"}
+                ? mode === "login" ? "Signing in…" : mode === "register" ? "Registering…" : "Verifying…"
+                : mode === "login" ? "Sign in →" : mode === "register" ? "Register →" : "Verify →"}
             </Button>
           </form>
 
           <p className="mt-10 text-xs text-muted-foreground">
-            {mode === "login" ? (
+            {mode === "verify" ? (
+              <>
+                Wrong email?{" "}
+                <button onClick={() => setMode("register")} className="underline hover:text-foreground">
+                  Go back
+                </button>
+              </>
+            ) : mode === "login" ? (
               <>
                 Don't have an account?{" "}
-                <button
-                  onClick={() => setMode("register")}
-                  className="underline hover:text-foreground"
-                >
+                <button onClick={() => setMode("register")} className="underline hover:text-foreground">
                   Register
                 </button>
               </>
             ) : (
               <>
                 Already have an account?{" "}
-                <button
-                  onClick={() => setMode("login")}
-                  className="underline hover:text-foreground"
-                >
+                <button onClick={() => setMode("login")} className="underline hover:text-foreground">
                   Sign in
                 </button>
               </>
