@@ -59,7 +59,7 @@ public class AuthController {
         user.setEmailVerified(false);
         userRepository.save(user);
 
-        otpService.sendOtp(user.getEmail(), "VERIFY_EMAIL");
+        otpService.sendOtpToBoth(user.getEmail(), user.getPhone(), "VERIFY_EMAIL");
         return ResponseEntity.ok(Map.of(
             "email", user.getEmail(),
             "verified", false,
@@ -103,7 +103,7 @@ public class AuthController {
         }
         User user = userRepository.findByEmail(request.email()).orElseThrow();
         if (!user.isEmailVerified()) {
-            otpService.sendOtp(user.getEmail(), "VERIFY_EMAIL");
+            otpService.sendOtpToBoth(user.getEmail(), user.getPhone(), "VERIFY_EMAIL");
             return ResponseEntity.status(403).body(Map.of(
                 "email", user.getEmail(),
                 "verified", false,

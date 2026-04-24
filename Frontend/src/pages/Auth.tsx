@@ -136,7 +136,7 @@ const Auth = () => {
               ? "Enter your credentials to continue."
               : mode === "register"
               ? "Register a new account to get started."
-              : `We sent a 6-digit code to ${email}. Enter it below to activate your account.`}
+              : `We sent a 6-digit code to your email and phone. Enter it below to activate your account.`}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-10 space-y-5">

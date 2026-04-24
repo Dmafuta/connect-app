@@ -66,6 +66,31 @@ public class OtpService {
     }
 
     /**
+     * Send the SAME OTP code to both email and SMS (if phone is provided).
+     * Verification is always done against the email target.
+     *
+     * @param email   recipient email address
+     * @param phone   recipient phone in E.164 format — nullable, SMS skipped if blank
+     * @param purpose LOGIN | VERIFY_EMAIL | PASSWORD_RESET
+     */
+    @Transactional
+    public void sendOtpToBoth(String email, String phone, String purpose) {
+        String code = createAndPersistOtp(email, purpose);
+        emailService.sendEmail(
+            email,
+            "Your QuantumConnect verification code",
+            EmailService.otpBody(code, expiryMinutes)
+        );
+        if (phone != null && !phone.isBlank()) {
+            try {
+                smsService.sendSms(phone, SmsService.otpSmsBody(code, expiryMinutes));
+            } catch (Exception e) {
+                // SMS failure should not block the flow — email was already sent
+            }
+        }
+    }
+
+    /**
      * Verify an OTP regardless of the channel it was sent through.
      * The {@code target} is the email or phone number the OTP was issued to.
      *
