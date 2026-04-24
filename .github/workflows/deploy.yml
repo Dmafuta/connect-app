@@ -143,8 +143,8 @@ jobs:
             cd /opt/quantumconnect
 
             # Update image tags to the newly built SHA
-            sudo sed -i "s|BACKEND_IMAGE=.*|BACKEND_IMAGE=${{ env.BACKEND_IMAGE }}:${{ github.sha }}|" .env
-            sudo sed -i "s|FRONTEND_IMAGE=.*|FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|" .env
+            sed -i "s|BACKEND_IMAGE=.*|BACKEND_IMAGE=${{ env.BACKEND_IMAGE }}:${{ github.sha }}|" .env
+            sed -i "s|FRONTEND_IMAGE=.*|FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|" .env
 
             # Pull new images (packages are public, no login needed)
             docker compose pull frontend backend
