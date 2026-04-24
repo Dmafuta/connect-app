@@ -29,9 +29,9 @@ public class SmsService {
     private static final String PRODUCTION_URL = "https://api.africastalking.com/version1/messaging";
     private static final String SANDBOX_URL    = "https://api.sandbox.africastalking.com/version1/messaging";
 
-    private final RestTemplate               restTemplate;
-    private final NotificationLogRepository  notificationLogRepository;
-    private final ObjectMapper               objectMapper;
+    private final RestTemplate restTemplate;
+    private final NotificationLogRepository notificationLogRepository;
+    private final ObjectMapper objectMapper;
 
     @Value("${at.username}")
     private String username;
@@ -84,12 +84,12 @@ public class SmsService {
             String messageId = null;
             String cost      = null;
             try {
-                JsonNode root       = objectMapper.readTree(rawResponse);
+                JsonNode root = objectMapper.readTree(rawResponse);
                 JsonNode recipients = root.path("SMSMessageData").path("Recipients");
                 if (recipients.isArray() && !recipients.isEmpty()) {
                     JsonNode first = recipients.get(0);
                     messageId = first.path("messageId").asText(null);
-                    cost      = first.path("cost").asText(null);
+                    cost = first.path("cost").asText(null);
                 }
             } catch (Exception parseEx) {
                 log.warn("Could not parse AT response for logging: {}", parseEx.getMessage());
@@ -108,15 +108,23 @@ public class SmsService {
         }
     }
 
-    // ── SMS message templates ─────────────────────────────────────────────────
-
+    /** ── SMS message templates
+     * OTP messages sent to user for various functions
+     * @param otp The OTP sent to the user
+     * @param expiryMinutes Time taken for the otp to expire
+     * @return The Message with the Otp
+     */
     public static String otpSmsBody(String otp, int expiryMinutes) {
         return "QuantumConnect: Your verification code is " + otp +
                ". Valid for " + expiryMinutes + " minutes. Do not share this code.";
     }
 
+    /** ____ SMS message welcoming clients
+     *
+     * @return String message with hyperlink to notify clients about their meters
+     */
     public static String welcomeSmsBody() {
         return "Welcome to QuantumConnect! Your smart metering account is ready. " +
-               "Sign in at quantumconnect.africa";
+               "Sign in at https://billing.quantumconnect.africa";
     }
 }

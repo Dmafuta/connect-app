@@ -60,10 +60,19 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /** Create user with any role — SUPER_ADMIN / ADMIN */
+    /** Create user — SUPER_ADMIN / ADMIN (ADMIN cannot create SUPER_ADMIN or ADMIN) */
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
-    public ResponseEntity<?> createUser(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> createUser(@RequestHeader("Authorization") String authHeader,
+                                        @RequestBody Map<String, String> body) {
+        String callerRole = jwtUtil.extractRole(authHeader.substring(7));
+        Role targetRole = Role.valueOf(body.getOrDefault("role", "CUSTOMER"));
+
+        if (!"SUPER_ADMIN".equals(callerRole) &&
+                (targetRole == Role.SUPER_ADMIN || targetRole == Role.ADMIN)) {
+            return ResponseEntity.status(403).body(Map.of("message", "Insufficient privileges to create this role"));
+        }
+
         String email = body.get("email");
         if (userRepository.existsByEmail(email)) {
             return ResponseEntity.badRequest().body(Map.of("message", "Email already registered"));
@@ -74,7 +83,7 @@ public class UserController {
         user.setFirstName(body.getOrDefault("firstName", ""));
         user.setLastName(body.getOrDefault("lastName", ""));
         user.setPhone(body.get("phone"));
-        user.setRole(Role.valueOf(body.getOrDefault("role", "CUSTOMER")));
+        user.setRole(targetRole);
         userRepository.save(user);
         return ResponseEntity.ok(user);
     }
