@@ -58,7 +58,7 @@ jobs:
         working-directory: Frontend
         run: npm run build
         env:
-          VITE_API_URL: https://api.quantumconnect.africa
+          VITE_API_URL: https://quantumconnect.africa
 
   # ── Job 3: Build & Push Docker Images ────────────────────────────────────────
   build-and-push:
@@ -104,7 +104,7 @@ jobs:
             ${{ env.FRONTEND_IMAGE }}:latest
             ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
           build-args: |
-            VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_API_URL=https://quantumconnect.africa
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
