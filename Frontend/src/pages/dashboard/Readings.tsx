@@ -34,7 +34,8 @@ export default function Readings() {
   const load = () => {
     setLoading(true);
     const readingsEndpoint = isCustomer ? "/api/readings/my" : "/api/readings";
-    const metersEndpoint   = isCustomer ? "/api/meters/my" : "/api/meters";
+    const isTechnician     = user?.role === "TECHNICIAN";
+    const metersEndpoint   = isCustomer ? "/api/meters/my" : isTechnician ? "/api/meters/assigned" : "/api/meters";
     Promise.all([
       api.get<any[]>(readingsEndpoint).catch(() => []),
       api.get<any[]>(metersEndpoint).catch(() => []),

@@ -48,6 +48,15 @@ public class MeterController {
         return ResponseEntity.ok(meterRepository.findByCustomer(user));
     }
 
+    /** Technician's assigned meters */
+    @GetMapping("/assigned")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
+    public ResponseEntity<List<Meter>> assignedMeters(@RequestHeader("Authorization") String authHeader) {
+        String email = jwtUtil.extractEmail(authHeader.substring(7));
+        User tech = userRepository.findByEmail(email).orElseThrow();
+        return ResponseEntity.ok(meterRepository.findByTechnician(tech));
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
     public ResponseEntity<?> createMeter(@RequestBody Map<String, String> body) {
@@ -75,6 +84,14 @@ public class MeterController {
             if (body.containsKey("customerId")) {
                 userRepository.findById(Long.parseLong(body.get("customerId")))
                         .ifPresent(m::setCustomer);
+            }
+            if (body.containsKey("technicianId")) {
+                if (body.get("technicianId").isBlank()) {
+                    m.setTechnician(null);
+                } else {
+                    userRepository.findById(Long.parseLong(body.get("technicianId")))
+                            .ifPresent(m::setTechnician);
+                }
             }
             return ResponseEntity.ok(meterRepository.save(m));
         }).orElse(ResponseEntity.notFound().build());

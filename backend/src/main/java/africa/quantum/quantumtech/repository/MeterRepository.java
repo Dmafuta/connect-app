@@ -8,5 +8,6 @@ import java.util.List;
 public interface MeterRepository extends JpaRepository<Meter, Long> {
     List<Meter> findByCustomer(User customer);
     List<Meter> findByCustomerId(Long customerId);
+    List<Meter> findByTechnician(User technician);
     boolean existsBySerialNumber(String serialNumber);
 }

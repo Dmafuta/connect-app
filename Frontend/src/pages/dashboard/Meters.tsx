@@ -21,9 +21,17 @@ export default function Meters() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ serialNumber: "", type: "WATER", location: "", customerId: "" });
+  const [technicians, setTechnicians] = useState<any[]>([]);
+  const [form, setForm] = useState({ serialNumber: "", type: "WATER", location: "", customerId: "", technicianId: "" });
 
-  const load = () => { setLoading(true); Promise.all([api.get<any[]>("/api/meters"), api.get<any[]>("/api/users/customers")]).then(([m,c]) => { setMeters(m); setCustomers(c); }).finally(() => setLoading(false)); };
+  const load = () => {
+    setLoading(true);
+    Promise.all([
+      api.get<any[]>("/api/meters"),
+      api.get<any[]>("/api/users/customers"),
+      api.get<any[]>("/api/users/technicians"),
+    ]).then(([m, c, t]) => { setMeters(m); setCustomers(c); setTechnicians(t); }).finally(() => setLoading(false));
+  };
   useEffect(() => { load(); }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -33,7 +41,7 @@ export default function Meters() {
       await api.post("/api/meters", form);
       toast({ title: "Meter registered", description: `${form.serialNumber} added.` });
       setOpen(false);
-      setForm({ serialNumber: "", type: "WATER", location: "", customerId: "" });
+      setForm({ serialNumber: "", type: "WATER", location: "", customerId: "", technicianId: "" });
       load();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -84,6 +92,15 @@ export default function Meters() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Assign Technician (optional)</Label>
+                <Select value={form.technicianId} onValueChange={v => setForm(f => ({...f, technicianId: v}))}>
+                  <SelectTrigger className="rounded-none"><SelectValue placeholder="Select technician" /></SelectTrigger>
+                  <SelectContent>
+                    {technicians.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.firstName} {t.lastName}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <Button type="submit" disabled={saving} className="w-full rounded-none bg-brand-red text-white hover:bg-brand-red/90">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Register Meter"}
               </Button>
@@ -98,8 +115,8 @@ export default function Meters() {
       </div>
 
       <div className="rounded-none border border-border bg-card">
-        <div className="grid grid-cols-[auto_1fr_1fr_1fr_100px] border-b border-border bg-muted px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-          <span className="w-8" /><span>Serial</span><span>Type / Location</span><span>Customer</span><span>Status</span>
+        <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_100px] border-b border-border bg-muted px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+          <span className="w-8" /><span>Serial</span><span>Type / Location</span><span>Customer</span><span>Technician</span><span>Status</span>
         </div>
         {loading ? (
           <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">Loading…</div>
@@ -113,11 +130,12 @@ export default function Meters() {
             const Icon = TYPE_ICON[m.type] ?? Gauge;
             const color = TYPE_COLOR[m.type] ?? "#888";
             return (
-              <div key={m.id} className="grid grid-cols-[auto_1fr_1fr_1fr_100px] items-center border-b border-border px-4 py-3 text-sm last:border-0 hover:bg-muted/50 transition-colors">
+              <div key={m.id} className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_100px] items-center border-b border-border px-4 py-3 text-sm last:border-0 hover:bg-muted/50 transition-colors">
                 <Icon className="mr-3 h-4 w-4 shrink-0" style={{ color }} />
                 <span className="font-medium">{m.serialNumber}</span>
                 <span className="text-muted-foreground">{m.type} · {m.location ?? "—"}</span>
-                <span className="text-muted-foreground">{m.customer ? `${m.customer.firstName} ${m.customer.lastName}` : "Unassigned"}</span>
+                <span className="text-muted-foreground">{m.customer ? `${m.customer.firstName} ${m.customer.lastName}` : "—"}</span>
+                <span className="text-muted-foreground">{m.technician ? `${m.technician.firstName} ${m.technician.lastName}` : "—"}</span>
                 <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase ${STATUS_CLS[m.status] ?? ""}`}>{m.status}</span>
               </div>
             );

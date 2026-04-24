@@ -32,6 +32,11 @@ public class Meter {
     @JoinColumn(name = "customer_id")
     private User customer;
 
+    /** The technician responsible for this meter */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "technician_id")
+    private User technician;
+
     private LocalDateTime installedAt = LocalDateTime.now();
 
     // ── Getters & Setters ──────────────────────────────────────────────────────
@@ -47,6 +52,8 @@ public class Meter {
     public void setLocation(String location) { this.location = location; }
     public User getCustomer() { return customer; }
     public void setCustomer(User customer) { this.customer = customer; }
+    public User getTechnician() { return technician; }
+    public void setTechnician(User technician) { this.technician = technician; }
     public LocalDateTime getInstalledAt() { return installedAt; }
     public void setInstalledAt(LocalDateTime installedAt) { this.installedAt = installedAt; }
 }

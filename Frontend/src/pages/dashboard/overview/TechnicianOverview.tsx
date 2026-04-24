@@ -30,7 +30,7 @@ export default function TechnicianOverview() {
   useEffect(() => {
     Promise.all([
       api.get<any[]>("/api/alerts"),
-      api.get<any[]>("/api/meters"),
+      api.get<any[]>("/api/meters/assigned"),
     ]).then(([a, m]) => { setAlerts(a); setMeters(m); })
       .finally(() => setLoading(false));
   }, []);
