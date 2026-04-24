@@ -33,10 +33,10 @@ public class User {
     @Column(nullable = false)
     private boolean active = true;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean emailVerified = false;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean phoneVerified = false;
 
     // ── Getters & Setters ──────────────────────────────────────────────────────
