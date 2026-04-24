@@ -9,6 +9,7 @@ import DashboardShell from "@/components/dashboard/DashboardShell";
 
 import Landing      from "./pages/Landing.tsx";
 import Auth         from "./pages/Auth.tsx";
+import VerifyEmail  from "./pages/VerifyEmail.tsx";
 import NotFound     from "./pages/NotFound.tsx";
 import Forbidden    from "./pages/Forbidden.tsx";
 
@@ -41,9 +42,10 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             {/* Public */}
-            <Route path="/"     element={<Landing />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/403"  element={<Forbidden />} />
+            <Route path="/"              element={<Landing />} />
+            <Route path="/auth"          element={<Auth />} />
+            <Route path="/verify-email"  element={<VerifyEmail />} />
+            <Route path="/403"           element={<Forbidden />} />
 
             {/* Dashboard — all authenticated */}
             <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />

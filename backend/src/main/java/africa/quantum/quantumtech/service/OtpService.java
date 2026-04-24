@@ -13,6 +13,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class OtpService {
@@ -63,6 +64,36 @@ public class OtpService {
     public void sendOtpViaSms(String phone, String purpose) {
         String code = createAndPersistOtp(phone, purpose);
         smsService.sendSms(phone, SmsService.otpSmsBody(code, expiryMinutes));
+    }
+
+    /**
+     * Generates a UUID token, stores it, and sends a verification link to the email.
+     * The link points to the frontend /verify-email page with token + email as query params.
+     * Token expires in 24 hours and is consumed on first use.
+     *
+     * @param email   recipient email address
+     * @param appUrl  frontend base URL (e.g. https://quantumconnect.africa)
+     */
+    @Transactional
+    public void sendEmailVerificationLink(String email, String appUrl) {
+        String token = UUID.randomUUID().toString();
+
+        otpRepository.invalidatePrevious(email, "VERIFY_EMAIL_LINK");
+
+        OtpRecord record = new OtpRecord();
+        record.setEmail(email);
+        record.setCode(token);
+        record.setPurpose("VERIFY_EMAIL_LINK");
+        record.setCreatedAt(Instant.now());
+        record.setExpiresAt(Instant.now().plus(24, ChronoUnit.HOURS));
+        otpRepository.save(record);
+
+        String link = appUrl + "/verify-email?token=" + token + "&email=" + email;
+        emailService.sendEmail(
+            email,
+            "Verify your QuantumConnect email address",
+            EmailService.emailVerificationBody(link)
+        );
     }
 
     /**

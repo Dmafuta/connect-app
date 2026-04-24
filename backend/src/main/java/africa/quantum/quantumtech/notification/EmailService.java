@@ -205,6 +205,43 @@ public class EmailService implements NotificationService {
                 body.formatted(appUrl));
     }
 
+    /** Email address verification link email. */
+    public static String emailVerificationBody(String verifyLink) {
+        String body = """
+            <h1 style="margin:0 0 8px;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+              Verify your email address.
+            </h1>
+            <p style="margin:0 0 32px;font-size:14px;color:#888;line-height:1.6;">
+              Click the button below to confirm your email address and activate your
+              QuantumConnect account. This link expires in <strong style="color:#ccc;">24 hours</strong>
+              and can only be used once.
+            </p>
+
+            <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 32px;">
+              <tr>
+                <td style="background:#e60026;padding:14px 32px;">
+                  <a href="%s"
+                     style="font-size:13px;font-weight:700;color:#ffffff;text-decoration:none;
+                            letter-spacing:1px;text-transform:uppercase;">
+                    Verify Email Address →
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0;font-size:12px;color:#555;line-height:1.6;">
+              If the button doesn't work, copy and paste this link into your browser:<br/>
+              <span style="color:#888;">%s</span>
+            </p>
+            <p style="margin:16px 0 0;font-size:12px;color:#555;">
+              If you did not create a QuantumConnect account, you can safely ignore this email.
+            </p>
+            """.formatted(verifyLink, verifyLink);
+
+        return branded("Verify your QuantumConnect email",
+                "Click to verify your email address and activate your account.", body);
+    }
+
     /** Generic notification email body. */
     public static String notificationBody(String heading, String message) {
         String body = """

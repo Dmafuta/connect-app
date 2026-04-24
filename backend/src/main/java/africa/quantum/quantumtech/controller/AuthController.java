@@ -10,6 +10,7 @@ import africa.quantum.quantumtech.notification.EmailService;
 import africa.quantum.quantumtech.repository.UserRepository;
 import africa.quantum.quantumtech.security.JwtUtil;
 import africa.quantum.quantumtech.service.OtpService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -30,6 +31,9 @@ public class AuthController {
     private final EmailService emailService;
     private final OtpService otpService;
 
+    @Value("${app.url}")
+    private String appUrl;
+
     public AuthController(UserRepository userRepository,
                           PasswordEncoder passwordEncoder,
                           AuthenticationManager authManager,
@@ -44,6 +48,7 @@ public class AuthController {
         this.otpService      = otpService;
     }
 
+    /** Register — creates account, sends email verification link + phone OTP if phone given. */
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
@@ -57,25 +62,32 @@ public class AuthController {
         if (request.phone()     != null) user.setPhone(request.phone());
         user.setRole(Role.CUSTOMER);
         user.setEmailVerified(false);
+        user.setPhoneVerified(false);
         userRepository.save(user);
 
-        otpService.sendOtpToBoth(user.getEmail(), user.getPhone(), "VERIFY_EMAIL");
+        // Email: send one-time verification link
+        otpService.sendEmailVerificationLink(user.getEmail(), appUrl);
+
+        // Phone: send OTP if phone number was provided
+        boolean phoneSent = false;
+        if (user.getPhone() != null && !user.getPhone().isBlank()) {
+            otpService.sendOtpViaSms(user.getPhone(), "VERIFY_PHONE");
+            phoneSent = true;
+        }
+
         return ResponseEntity.ok(Map.of(
-            "email", user.getEmail(),
-            "verified", false,
-            "message", "Account created. Please check your email for the verification code."
+            "email",     user.getEmail(),
+            "phoneSent", phoneSent,
+            "message",   "Account created. Check your email for a verification link."
+                       + (phoneSent ? " An OTP has also been sent to your phone." : "")
         ));
     }
 
-    @PostMapping("/verify-email")
-    public ResponseEntity<?> verifyEmail(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        String code  = body.get("code");
-        if (email == null || code == null) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("email and code are required"));
-        }
-        if (!otpService.verifyOtp(email, "VERIFY_EMAIL", code)) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("Invalid or expired verification code"));
+    /** GET /api/auth/verify-email?token=...&email=... — called when user clicks the link. */
+    @GetMapping("/verify-email")
+    public ResponseEntity<?> verifyEmailLink(@RequestParam String token, @RequestParam String email) {
+        if (!otpService.verifyOtp(email, "VERIFY_EMAIL_LINK", token)) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Verification link is invalid or has expired."));
         }
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -87,11 +99,28 @@ public class AuthController {
             "Welcome to QuantumConnect",
             emailService.welcomeBody(user.getEmail())
         );
-
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
-        return ResponseEntity.ok(new AuthResponse(token, user.getEmail(), user.getRole().name(), user.getFullName()));
+        return ResponseEntity.ok(Map.of("message", "Email verified successfully. You can now sign in."));
     }
 
+    /** POST /api/auth/verify-phone — verifies OTP sent to phone number. */
+    @PostMapping("/verify-phone")
+    public ResponseEntity<?> verifyPhone(@RequestBody Map<String, String> body) {
+        String phone = body.get("phone");
+        String code  = body.get("code");
+        if (phone == null || code == null) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("phone and code are required"));
+        }
+        if (!otpService.verifyOtp(phone, "VERIFY_PHONE", code)) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Invalid or expired OTP"));
+        }
+        userRepository.findByPhone(phone).ifPresent(u -> {
+            u.setPhoneVerified(true);
+            userRepository.save(u);
+        });
+        return ResponseEntity.ok(Map.of("message", "Phone number verified successfully."));
+    }
+
+    /** Login — requires email to be verified. */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
@@ -103,12 +132,8 @@ public class AuthController {
         }
         User user = userRepository.findByEmail(request.email()).orElseThrow();
         if (!user.isEmailVerified()) {
-            otpService.sendOtpToBoth(user.getEmail(), user.getPhone(), "VERIFY_EMAIL");
-            return ResponseEntity.status(403).body(Map.of(
-                "email", user.getEmail(),
-                "verified", false,
-                "message", "Email not verified. A new verification code has been sent to your email."
-            ));
+            return ResponseEntity.status(403).body(new ErrorResponse(
+                "Please verify your email before signing in. Check your inbox for the verification link."));
         }
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
         return ResponseEntity.ok(new AuthResponse(token, user.getEmail(), user.getRole().name(), user.getFullName()));

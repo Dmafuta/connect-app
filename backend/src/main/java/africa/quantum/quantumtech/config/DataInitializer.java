@@ -35,6 +35,7 @@ public class DataInitializer implements CommandLineRunner {
         u.setLastName(lastName);
         u.setRole(role);
         u.setEmailVerified(true);
+        u.setPhoneVerified(true);
         userRepository.save(u);
         System.out.printf("[DataInitializer] Created %s (%s)%n", email, role);
     }
