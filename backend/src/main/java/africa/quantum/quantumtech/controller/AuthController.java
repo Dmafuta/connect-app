@@ -66,20 +66,34 @@ public class AuthController {
         userRepository.save(user);
 
         // Email: send one-time verification link
-        otpService.sendEmailVerificationLink(user.getEmail(), appUrl);
+        boolean emailSent = false;
+        try {
+            otpService.sendEmailVerificationLink(user.getEmail(), appUrl);
+            emailSent = true;
+        } catch (Exception e) {
+            // Log but don't fail registration — user can request resend later
+        }
 
         // Phone: send OTP if phone number was provided
         boolean phoneSent = false;
         if (user.getPhone() != null && !user.getPhone().isBlank()) {
-            otpService.sendOtpViaSms(user.getPhone(), "VERIFY_PHONE");
-            phoneSent = true;
+            try {
+                otpService.sendOtpViaSms(user.getPhone(), "VERIFY_PHONE");
+                phoneSent = true;
+            } catch (Exception e) {
+                // SMS failure doesn't block registration
+            }
         }
+
+        String msg = "Account created.";
+        if (emailSent)  msg += " Check your email for a verification link.";
+        if (phoneSent)  msg += " An OTP has been sent to your phone.";
+        if (!emailSent) msg += " We couldn't send the verification email right now — please contact support.";
 
         return ResponseEntity.ok(Map.of(
             "email",     user.getEmail(),
             "phoneSent", phoneSent,
-            "message",   "Account created. Check your email for a verification link."
-                       + (phoneSent ? " An OTP has also been sent to your phone." : "")
+            "message",   msg
         ));
     }
 
@@ -94,11 +108,14 @@ public class AuthController {
         user.setEmailVerified(true);
         userRepository.save(user);
 
-        emailService.sendEmail(
-            user.getEmail(),
-            "Welcome to QuantumConnect",
-            emailService.welcomeBody(user.getEmail())
-        );
+        try {
+            emailService.sendEmail(
+                user.getEmail(),
+                "Welcome to QuantumConnect",
+                emailService.welcomeBody(user.getEmail())
+            );
+        } catch (Exception ignored) {}
+
         return ResponseEntity.ok(Map.of("message", "Email verified successfully. You can now sign in."));
     }
 
