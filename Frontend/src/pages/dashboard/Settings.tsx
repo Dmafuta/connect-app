@@ -22,7 +22,7 @@ export default function Settings() {
   const [pwError,  setPwError]  = useState("");
 
   // Org settings form (ADMIN/SUPER_ADMIN)
-  const [orgForm,    setOrgForm]    = useState({ name: "", contactEmail: "", contactPhone: "" });
+  const [orgForm,    setOrgForm]    = useState({ name: "", code: "", contactEmail: "", contactPhone: "" });
   const [orgSaving,  setOrgSaving]  = useState(false);
   const [orgLoaded,  setOrgLoaded]  = useState(false);
 
@@ -45,6 +45,7 @@ export default function Settings() {
     api.get<any>("/api/tenants/me").then(t => {
       setOrgForm({
         name:         t.name         ?? "",
+        code:         t.code         ?? "",
         contactEmail: t.contactEmail ?? "",
         contactPhone: t.contactPhone ?? "",
       });
@@ -166,9 +167,15 @@ export default function Settings() {
             <h2 className="font-display text-sm font-semibold uppercase tracking-[0.15em]">Organisation</h2>
           </div>
           <form onSubmit={handleOrg} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Organisation Name</Label>
-              <Input value={orgForm.name} onChange={e => setOrgForm(f => ({ ...f, name: e.target.value }))} required className="rounded-none" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Organisation Name</Label>
+                <Input value={orgForm.name} disabled className="rounded-none bg-muted/50 text-muted-foreground cursor-not-allowed" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Organisation Code</Label>
+                <Input value={orgForm.code} disabled className="rounded-none bg-muted/50 text-muted-foreground cursor-not-allowed font-mono tracking-widest" />
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Contact Email</Label>
