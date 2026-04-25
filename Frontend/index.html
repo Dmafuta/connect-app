@@ -3,27 +3,102 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
     <title>QuantumConnect</title>
-    <meta name="description" content="Lovable Generated Project">
-    <meta name="author" content="Lovable" />
+    <meta name="description" content="QuantumConnect — Smart Metering Intelligence">
+    <meta name="author" content="QuantumConnect" />
 
-    <!-- TODO: Update og:title to match your application name -->
-    
-    
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    
+    <meta property="og:title" content="QuantumConnect" />
+    <meta property="og:description" content="QuantumConnect — Smart Metering Intelligence" />
 
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    
-    <meta property="og:title" content="Lovable App">
-  <meta name="twitter:title" content="Lovable App">
-  <meta property="og:description" content="Lovable Generated Project">
-  <meta name="twitter:description" content="Lovable Generated Project">
+    <meta name="twitter:title" content="QuantumConnect" />
+    <meta name="twitter:description" content="QuantumConnect — Smart Metering Intelligence" />
 </head>
 
   <body>
+    <!-- ── Splash screen — removed by main.tsx after React mounts ── -->
+    <div id="splash">
+      <div id="splash-inner">
+        <div id="splash-ring-outer"></div>
+        <div id="splash-ring-inner"></div>
+        <img id="splash-logo" src="/icon-192.png" alt="QuantumConnect" />
+      </div>
+      <p id="splash-label">QuantumConnect</p>
+    </div>
+
+    <style>
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        background: hsl(0, 0%, 7%);
+        transition: opacity 0.4s ease;
+      }
+      #splash.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #splash-inner {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      /* outer spinning arc */
+      #splash-ring-outer {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 3px solid transparent;
+        border-top-color: hsl(354, 100%, 45%);
+        border-right-color: hsl(354, 100%, 45%);
+        animation: spin 1s linear infinite;
+      }
+      /* inner counter-spinning arc */
+      #splash-ring-inner {
+        position: absolute;
+        inset: 10px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        border-bottom-color: hsl(354, 100%, 45%, 0.5);
+        animation: spin 1.5s linear infinite reverse;
+      }
+      #splash-logo {
+        width: 72px;
+        height: 72px;
+        object-fit: contain;
+        border-radius: 50%;
+      }
+      #splash-label {
+        font-family: 'Chillax', system-ui, sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.4);
+        margin: 0;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
