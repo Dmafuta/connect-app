@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { useAlertStream } from "@/hooks/useAlertStream";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth, UserRole } from "@/context/AuthContext";
 import {
   LayoutDashboard, Users, Gauge, Activity, AlertTriangle,
   CreditCard, Settings, LogOut, Menu, X, ChevronRight,
-  Wrench, UserCircle, Zap,
+  Wrench, UserCircle, Zap, Building2, ClipboardList, BarChart3, ClipboardCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,14 +20,18 @@ interface NavItem {
 const NAV: NavItem[] = [
   { label: "Overview",      href: "/dashboard",               icon: LayoutDashboard, roles: ["SUPER_ADMIN","ADMIN","TECHNICIAN","CUSTOMER"] },
   { label: "Users",         href: "/dashboard/users",         icon: Users,           roles: ["SUPER_ADMIN"] },
+  { label: "Tenants",       href: "/dashboard/tenants",       icon: Building2,       roles: ["SUPER_ADMIN"] },
   { label: "Customers",     href: "/dashboard/customers",     icon: UserCircle,      roles: ["SUPER_ADMIN","ADMIN"] },
   { label: "Technicians",   href: "/dashboard/technicians",   icon: Wrench,          roles: ["SUPER_ADMIN","ADMIN"] },
-  { label: "Meters",        href: "/dashboard/meters",        icon: Gauge,           roles: ["SUPER_ADMIN","ADMIN","TECHNICIAN"] },
-  { label: "Readings",      href: "/dashboard/readings",      icon: Activity,        roles: ["SUPER_ADMIN","ADMIN","TECHNICIAN","CUSTOMER"] },
+  { label: "Meters",          href: "/dashboard/meters",          icon: Gauge,           roles: ["SUPER_ADMIN","ADMIN","TECHNICIAN"] },
+  { label: "My Assignments",  href: "/dashboard/my-assignments",  icon: ClipboardCheck,  roles: ["TECHNICIAN"] },
+  { label: "Readings",        href: "/dashboard/readings",        icon: Activity,        roles: ["SUPER_ADMIN","ADMIN","TECHNICIAN","CUSTOMER"] },
   { label: "Alerts",        href: "/dashboard/alerts",        icon: AlertTriangle,   roles: ["SUPER_ADMIN","ADMIN","TECHNICIAN"] },
   { label: "Transactions",  href: "/dashboard/transactions",  icon: CreditCard,      roles: ["SUPER_ADMIN","ADMIN","CUSTOMER"] },
   { label: "My Meters",     href: "/dashboard/my-meters",     icon: Zap,             roles: ["CUSTOMER"] },
-  { label: "Settings",      href: "/dashboard/settings",      icon: Settings,        roles: ["SUPER_ADMIN","ADMIN"] },
+  { label: "Reports",       href: "/dashboard/reports",       icon: BarChart3,       roles: ["SUPER_ADMIN","ADMIN"] },
+  { label: "Audit Log",    href: "/dashboard/audit",         icon: ClipboardList,   roles: ["SUPER_ADMIN","ADMIN"] },
+  { label: "Settings",     href: "/dashboard/settings",      icon: Settings,        roles: ["SUPER_ADMIN","ADMIN"] },
 ];
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -41,6 +46,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+
+  useAlertStream();
 
   const visibleNav = NAV.filter(n => user && n.roles.includes(user.role));
 

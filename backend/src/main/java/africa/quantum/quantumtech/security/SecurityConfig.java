@@ -64,10 +64,13 @@ public class SecurityConfig {
                     "/api/auth/**",
                     "/api/notifications/otp/**",
                     "/api/mpesa/callback",
-                    "/actuator/health"
+                    "/actuator/health",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/v3/api-docs/**"
                 ).permitAll()
                 // verify-email is already covered by /api/auth/** above
-                .requestMatchers("/api/users/**", "/api/meters/**", "/api/readings/**", "/api/alerts/**").authenticated()
+                .requestMatchers("/api/users/**", "/api/meters/**", "/api/readings/**", "/api/alerts/**", "/api/tenants/**", "/api/audit/**", "/api/stats/**", "/api/reports/**").authenticated()
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authProvider())

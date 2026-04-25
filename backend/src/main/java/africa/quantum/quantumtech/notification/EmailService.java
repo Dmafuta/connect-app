@@ -242,6 +242,79 @@ public class EmailService implements NotificationService {
                 "Click to verify your email address and activate your account.", body);
     }
 
+    /** Password reset link email body. */
+    public static String passwordResetBody(String resetLink) {
+        String body = """
+            <h1 style="margin:0 0 8px;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+              Reset your password.
+            </h1>
+            <p style="margin:0 0 32px;font-size:14px;color:#888;line-height:1.6;">
+              We received a request to reset the password for your account.
+              Click the button below to choose a new password.
+              This link expires in <strong style="color:#ccc;">1 hour</strong> and can only be used once.
+            </p>
+
+            <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 32px;">
+              <tr>
+                <td style="background:#e60026;padding:14px 32px;">
+                  <a href="%s"
+                     style="font-size:13px;font-weight:700;color:#ffffff;text-decoration:none;
+                            letter-spacing:1px;text-transform:uppercase;">
+                    Reset Password →
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0 0 16px;font-size:12px;color:#555;line-height:1.6;">
+              If the button doesn't work, copy and paste this link into your browser:<br/>
+              <span style="color:#888;">%s</span>
+            </p>
+            <p style="margin:0;font-size:12px;color:#555;">
+              If you did not request a password reset, you can safely ignore this email.
+              Your password will not be changed.
+            </p>
+            """.formatted(resetLink, resetLink);
+
+        return branded("Reset your QuantumConnect password",
+                "Reset your password — this link expires in 1 hour.", body);
+    }
+
+    /** Reading notification sent to the assigned customer after a reading is logged. */
+    public static String readingNotificationBody(String serial, double value, String unit,
+                                                  double previousValue, java.time.LocalDateTime readAt) {
+        double delta = value - previousValue;
+        String deltaStr = previousValue > 0
+                ? String.format("%+.2f %s since last reading", delta, unit)
+                : "First reading recorded";
+        String body = """
+            <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+              New meter reading recorded.
+            </h1>
+            <p style="margin:0 0 24px;font-size:14px;color:#888;line-height:1.6;">
+              A reading has been logged for your meter <strong style="color:#ccc;">%s</strong>.
+            </p>
+            <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 24px;width:100%%;">
+              <tr>
+                <td style="background:#0f0f0f;border-left:3px solid #e60026;padding:16px 20px;">
+                  <p style="margin:0 0 8px;font-size:28px;font-weight:800;color:#e60026;font-family:monospace;">
+                    %.2f <span style="font-size:16px;color:#888;">%s</span>
+                  </p>
+                  <p style="margin:0;font-size:12px;color:#666;">%s</p>
+                  <p style="margin:4px 0 0;font-size:11px;color:#555;">Recorded: %s</p>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0;font-size:12px;color:#555;line-height:1.6;">
+              If you believe this reading is incorrect, please contact your service provider.
+            </p>
+            """.formatted(serial, value, unit, deltaStr,
+                readAt != null ? readAt.toString().replace("T", " ").substring(0, 16) : "just now");
+
+        return branded("Meter Reading — " + serial,
+                "A new reading of " + String.format("%.2f", value) + " " + unit + " has been recorded for " + serial, body);
+    }
+
     /** Generic notification email body. */
     public static String notificationBody(String heading, String message) {
         String body = """

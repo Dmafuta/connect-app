@@ -5,9 +5,6 @@ import {
   UserCircle, Gauge, AlertTriangle, CreditCard,
   Droplets, Zap, Flame, ArrowRight, CheckCircle2, Clock,
 } from "lucide-react";
-import { BarChart, Bar, Cell, ResponsiveContainer, Tooltip } from "recharts";
-
-const PIE_COLORS = ["#3b82f6", "#f59e0b", "#10b981"];
 
 function ago(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -28,29 +25,16 @@ const SEVERITY_BADGE: Record<string, string> = {
 
 export default function AdminOverview() {
   const api = useApi();
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [meters,    setMeters]    = useState<any[]>([]);
-  const [alerts,    setAlerts]    = useState<any[]>([]);
-  const [loading,   setLoading]   = useState(true);
+  const [stats,   setStats]   = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      api.get<any[]>("/api/users/customers"),
-      api.get<any[]>("/api/meters"),
-      api.get<any[]>("/api/alerts"),
-    ]).then(([c, m, a]) => {
-      setCustomers(c); setMeters(m); setAlerts(a);
-    }).finally(() => setLoading(false));
+    api.get<any>("/api/stats").then(setStats).finally(() => setLoading(false));
   }, []);
 
-  const openAlerts   = alerts.filter(a => !a.resolved);
-  const activeMeters = meters.filter(m => m.status === "ACTIVE");
-
-  const meterByType = ["WATER","ELECTRICITY","GAS"].map(t => ({
-    name: t, value: meters.filter(m => m.type === t).length,
-  }));
-
   if (loading) return <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">Loading…</div>;
+
+  const recentAlerts = stats.recentAlerts ?? [];
 
   return (
     <div className="space-y-6">
@@ -65,30 +49,29 @@ export default function AdminOverview() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Customers"     value={customers.length}    sub="registered accounts"  accent="text-brand-red"  icon={UserCircle} />
-        <StatCard label="Active Meters" value={activeMeters.length} sub={`${meters.length} total`} accent="text-blue-600"   icon={Gauge} />
-        <StatCard label="Open Alerts"   value={openAlerts.length}   sub="unresolved"           accent={openAlerts.length > 0 ? "text-rose-600" : "text-emerald-600"} icon={AlertTriangle} />
-        <StatCard label="Meter Types"   value={3}                   sub="Water, Electricity, Gas" accent="text-emerald-600" icon={CreditCard} />
+        <StatCard label="Customers"     value={stats.customerCount} sub="registered accounts"      accent="text-brand-red"   icon={UserCircle} />
+        <StatCard label="Active Meters" value={stats.activeMeters}  sub={`${stats.totalMeters} total`} accent="text-blue-600" icon={Gauge} />
+        <StatCard label="Open Alerts"   value={stats.openAlerts}    sub="unresolved"                accent={stats.openAlerts > 0 ? "text-rose-600" : "text-emerald-600"} icon={AlertTriangle} />
+        <StatCard label="Meter Types"   value={3}                   sub="Water, Electricity, Gas"  accent="text-emerald-600" icon={CreditCard} />
       </div>
 
-      {/* Meters by type bar */}
       <div className="grid gap-4 lg:grid-cols-3">
+        {/* Meters by type */}
         <div className="rounded-none border border-border bg-card p-5">
           <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.15em]">Meters by Type</h3>
           <div className="space-y-3">
             {[
-              { type: "WATER",       color: "#3b82f6", icon: Droplets },
-              { type: "ELECTRICITY", color: "#f59e0b", icon: Zap },
-              { type: "GAS",         color: "#10b981", icon: Flame },
-            ].map(({ type, color, icon: Icon }) => {
-              const count = meters.filter(m => m.type === type).length;
-              const pct = meters.length ? (count / meters.length) * 100 : 0;
+              { type: "WATER",       label: "Water",       count: stats.waterMeters,       color: "#3b82f6", icon: Droplets },
+              { type: "ELECTRICITY", label: "Electricity", count: stats.electricityMeters, color: "#f59e0b", icon: Zap },
+              { type: "GAS",         label: "Gas",         count: stats.gasMeters,         color: "#10b981", icon: Flame },
+            ].map(({ label, count, color, icon: Icon }) => {
+              const pct = stats.totalMeters ? (count / stats.totalMeters) * 100 : 0;
               return (
-                <div key={type}>
+                <div key={label}>
                   <div className="mb-1 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-1.5">
                       <Icon className="h-3.5 w-3.5" style={{ color }} />
-                      <span className="capitalize">{type.toLowerCase()}</span>
+                      <span>{label}</span>
                     </div>
                     <span className="font-semibold">{count}</span>
                   </div>
@@ -109,17 +92,17 @@ export default function AdminOverview() {
               View all <ArrowRight className="h-3 w-3" />
             </a>
           </div>
-          {openAlerts.length === 0 ? (
+          {recentAlerts.length === 0 ? (
             <div className="flex items-center gap-2 rounded-none border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
               <CheckCircle2 className="h-4 w-4" /> No open alerts — system nominal.
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {openAlerts.slice(0, 5).map((a: any) => (
+              {recentAlerts.map((a: any) => (
                 <div key={a.id} className="flex items-center justify-between py-2.5">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{a.alertType?.replace("_"," ")}</p>
-                    <p className="text-xs text-muted-foreground">{a.message ?? "—"} · Meter #{a.meter?.id ?? a.meterId}</p>
+                    <p className="truncate text-sm font-medium">{a.alertType?.replace("_", " ")}</p>
+                    <p className="text-xs text-muted-foreground">{a.message ?? "—"} · {a.meter?.serialNumber ?? `Meter #${a.meter?.id}`}</p>
                   </div>
                   <div className="ml-4 flex shrink-0 items-center gap-3">
                     <span className={`rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${SEVERITY_BADGE[a.severity] ?? ""}`}>
@@ -139,10 +122,10 @@ export default function AdminOverview() {
         <h3 className="mb-4 font-display text-sm font-semibold uppercase tracking-[0.15em]">Quick Actions</h3>
         <div className="grid gap-1 sm:grid-cols-2">
           {[
-            { label: "Add a new customer", href: "/dashboard/customers",  icon: UserCircle },
-            { label: "Register a meter",   href: "/dashboard/meters",     icon: Gauge },
-            { label: "Review alerts",      href: "/dashboard/alerts",     icon: AlertTriangle },
-            { label: "View transactions",  href: "/dashboard/transactions",icon: CreditCard },
+            { label: "Add a new customer", href: "/dashboard/customers",   icon: UserCircle },
+            { label: "Register a meter",   href: "/dashboard/meters",      icon: Gauge },
+            { label: "Review alerts",      href: "/dashboard/alerts",      icon: AlertTriangle },
+            { label: "View transactions",  href: "/dashboard/transactions", icon: CreditCard },
           ].map(item => (
             <a key={item.href} href={item.href}
               className="flex items-center justify-between rounded-none px-3 py-2.5 text-sm hover:bg-muted transition-colors">

@@ -8,8 +8,11 @@ import { useAuth } from "@/context/AuthContext";
 
 const API = `${import.meta.env.VITE_API_URL}/api/auth`;
 
+type Mode = "login" | "register" | "verify-phone" | "forgot-password" | "verify-login-otp";
+
 const Auth = () => {
-  const [mode, setMode] = useState<"login" | "register" | "verify-phone">("login");
+  const [mode, setMode] = useState<Mode>("login");
+  const [tenantCode, setTenantCode] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -25,6 +28,18 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      if (mode === "forgot-password") {
+        const res = await fetch(`${API}/forgot-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tenantCode, email }),
+        });
+        const data = await res.json();
+        toast({ title: "Check your email", description: data.message });
+        setMode("login");
+        return;
+      }
+
       if (mode === "verify-phone") {
         const res = await fetch(`${API}/verify-phone`, {
           method: "POST",
@@ -38,10 +53,30 @@ const Auth = () => {
         return;
       }
 
+      if (mode === "verify-login-otp") {
+        const res = await fetch(`${API}/verify-login-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, code: otp, tenantCode }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Verification failed");
+        login({
+          token: data.token,
+          email: data.email,
+          role: data.role,
+          fullName: data.fullName ?? "",
+          tenantCode: data.tenantCode ?? tenantCode,
+          tenantName: data.tenantName ?? "",
+        });
+        navigate("/dashboard");
+        return;
+      }
+
       const endpoint = mode === "login" ? `${API}/login` : `${API}/register`;
       const reqBody = mode === "login"
-        ? { email, password }
-        : { email, password, firstName, lastName, phone };
+        ? { tenantCode, email, password }
+        : { tenantCode, email, password, firstName, lastName, phone };
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -60,7 +95,21 @@ const Auth = () => {
         return;
       }
 
-      login({ token: data.token, email: data.email, role: data.role, fullName: data.fullName ?? "" });
+      // Login step 1 succeeded — OTP was sent
+      if (data.status === "OTP_REQUIRED") {
+        toast({ title: "Check your email", description: data.message });
+        setMode("verify-login-otp");
+        return;
+      }
+
+      login({
+        token: data.token,
+        email: data.email,
+        role: data.role,
+        fullName: data.fullName ?? "",
+        tenantCode: data.tenantCode ?? tenantCode,
+        tenantName: data.tenantName ?? "",
+      });
       navigate("/dashboard");
     } catch (error: any) {
       toast({
@@ -129,32 +178,79 @@ const Auth = () => {
           </div>
 
           <p className="mb-3 text-xs uppercase tracking-[0.25em] text-brand-red">
-            {mode === "verify-phone" ? "Phone verification" : "Secure access"}
+            {mode === "verify-phone" || mode === "verify-login-otp" ? "Verification" : mode === "forgot-password" ? "Password recovery" : "Secure access"}
           </p>
           <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">
-            {mode === "login" ? "Welcome back." : mode === "register" ? "Create account." : "Verify phone."}
+            {mode === "login" ? "Welcome back." : mode === "register" ? "Create account." : mode === "forgot-password" ? "Reset password." : "Verify code."}
           </h1>
           <p className="mt-3 text-sm text-muted-foreground">
             {mode === "login"
-              ? "Enter your credentials to continue."
+              ? "Enter your organisation code and credentials to continue."
               : mode === "register"
               ? "Register a new account to get started."
+              : mode === "forgot-password"
+              ? "Enter your organisation code and email. We'll send you a reset link."
+              : mode === "verify-login-otp"
+              ? `Enter the 6-digit code sent to ${email}.`
               : `Enter the OTP sent to ${phone}. Also check your email for a verification link.`}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-10 space-y-5">
-            {mode === "verify-phone" ? (
+            {mode === "forgot-password" ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="tenantCode" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">
+                    Organisation code
+                  </Label>
+                  <Input
+                    id="tenantCode"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="e.g. 432910"
+                    value={tenantCode}
+                    onChange={e => setTenantCode(e.target.value.replace(/\D/g, ""))}
+                    required
+                    className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">Email</Label>
+                  <Input id="email" type="email" placeholder="you@example.com" value={email}
+                    onChange={e => setEmail(e.target.value)} required
+                    className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
+              </>
+            ) : mode === "verify-phone" || mode === "verify-login-otp" ? (
               <div className="space-y-2">
                 <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">
-                  OTP code
+                  Verification code
                 </Label>
                 <Input type="text" inputMode="numeric" maxLength={6} placeholder="000000"
                   value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ""))} required
+                  autoFocus
                   className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-center text-2xl font-semibold tracking-[0.5em] text-foreground focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </div>
             ) : (
               <>
+                <div className="space-y-2">
+                  <Label htmlFor="tenantCode" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">
+                    Organisation code
+                  </Label>
+                  <Input
+                    id="tenantCode"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="e.g. 432910"
+                    value={tenantCode}
+                    onChange={e => setTenantCode(e.target.value.replace(/\D/g, ""))}
+                    required
+                    className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
                 {mode === "register" && (
                   <>
                     <div className="grid grid-cols-2 gap-4">
@@ -170,7 +266,9 @@ const Auth = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">Phone <span className="normal-case text-muted-foreground">(optional, e.g. +254712345678)</span></Label>
+                      <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">
+                        Phone <span className="normal-case text-muted-foreground">(optional, e.g. +254712345678)</span>
+                      </Label>
                       <Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+254712345678"
                         className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0" />
                     </div>
@@ -178,15 +276,15 @@ const Auth = () => {
                 )}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">Email</Label>
-                  <Input id="email" type="email" placeholder="you@quantumconnect.com" value={email}
-                    onChange={(e) => setEmail(e.target.value)} required
+                  <Input id="email" type="email" placeholder="you@example.com" value={email}
+                    onChange={e => setEmail(e.target.value)} required
                     className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">Password</Label>
                   <Input id="password" type="password" placeholder="••••••••••" value={password}
-                    onChange={(e) => setPassword(e.target.value)} required minLength={6}
+                    onChange={e => setPassword(e.target.value)} required minLength={6}
                     className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </div>
@@ -197,21 +295,31 @@ const Auth = () => {
               className="mt-4 h-12 w-full rounded-none bg-brand-black font-display text-sm font-semibold uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-brand-red"
             >
               {loading
-                ? mode === "login" ? "Signing in…" : mode === "register" ? "Registering…" : "Verifying…"
-                : mode === "login" ? "Sign in →" : mode === "register" ? "Register →" : "Verify phone →"}
+                ? mode === "login" ? "Signing in…" : mode === "register" ? "Registering…" : mode === "forgot-password" ? "Sending…" : "Verifying…"
+                : mode === "login" ? "Sign in →" : mode === "register" ? "Register →" : mode === "forgot-password" ? "Send reset link →" : mode === "verify-login-otp" ? "Confirm →" : "Verify phone →"}
             </Button>
           </form>
 
           <p className="mt-10 text-xs text-muted-foreground">
-            {mode === "verify-phone" ? (
+            {mode === "verify-login-otp" ? (
+              <>
+                Didn't receive a code?{" "}
+                <button onClick={() => setMode("login")} className="underline hover:text-foreground">Back to sign in</button>
+              </>
+            ) : mode === "verify-phone" ? (
               <>
                 Skip for now?{" "}
-                <button onClick={() => setMode("login")} className="underline hover:text-foreground">
-                  Sign in
-                </button>
+                <button onClick={() => setMode("login")} className="underline hover:text-foreground">Sign in</button>
+              </>
+            ) : mode === "forgot-password" ? (
+              <>
+                Remember your password?{" "}
+                <button onClick={() => setMode("login")} className="underline hover:text-foreground">Sign in</button>
               </>
             ) : mode === "login" ? (
               <>
+                <button onClick={() => setMode("forgot-password")} className="underline hover:text-foreground">Forgot password?</button>
+                {" · "}
                 Don't have an account?{" "}
                 <button onClick={() => setMode("register")} className="underline hover:text-foreground">Register</button>
               </>

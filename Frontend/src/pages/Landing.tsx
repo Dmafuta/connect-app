@@ -5,7 +5,6 @@ import {
   Droplets,
   Zap,
   Flame,
-  Cpu,
   Cloud,
   BrainCircuit,
   Radio,
@@ -16,6 +15,8 @@ import {
   LineChart,
 } from "lucide-react";
 import heroMeter from "@/assets/hero-meter.jpg";
+import PublicHeader from "@/components/public/PublicHeader";
+import PublicFooter from "@/components/public/PublicFooter";
 
 /* ── Hero Carousel ─────────────────────────────────────────────────────────── */
 function HeroCarousel() {
@@ -173,33 +174,15 @@ function HeroCarousel() {
 
 const Landing = () => {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          <div className="flex items-center gap-2.5">
-            <span className="relative flex h-8 w-8 items-center justify-center">
-              <span className="absolute inset-0 rounded-full border-2 border-brand-red" />
-              <span className="absolute inset-1.5 rounded-full border-2 border-brand-black" />
-            </span>
-            <span className="font-display text-lg font-semibold tracking-tight">
-              QuantumConnect
-            </span>
-          </div>
-          <nav className="hidden items-center gap-8 text-sm md:flex">
-            <a href="#solutions" className="text-muted-foreground hover:text-foreground">Solutions</a>
-            <a href="#technology" className="text-muted-foreground hover:text-foreground">Technology</a>
-            <a href="#how" className="text-muted-foreground hover:text-foreground">How it works</a>
-            <a href="#impact" className="text-muted-foreground hover:text-foreground">Impact</a>
-          </nav>
-          <Link to="/auth">
-            <Button className="h-10 rounded-none bg-brand-black font-display text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground hover:bg-brand-red">
-              Sign in
-            </Button>
-          </Link>
-        </div>
-      </header>
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <PublicHeader navItems={[
+        { label: "Solutions",   href: "#solutions",  external: true },
+        { label: "Technology",  href: "#technology", external: true },
+        { label: "How it works",href: "#how",        external: true },
+        { label: "Impact",      href: "#impact",     external: true },
+      ]} />
 
+      <main className="flex-1">
       {/* Hero Carousel */}
       <HeroCarousel />
 
@@ -409,52 +392,8 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-brand-black text-primary-foreground">
-        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 md:grid-cols-4">
-          <div className="md:col-span-2">
-            <div className="flex items-center gap-2.5">
-              <span className="relative flex h-8 w-8 items-center justify-center">
-                <span className="absolute inset-0 rounded-full border-2 border-primary-foreground" />
-                <span className="absolute inset-1.5 rounded-full border-2 border-brand-red" />
-              </span>
-              <span className="font-display text-lg font-semibold tracking-tight">
-                QuantumConnect
-              </span>
-            </div>
-            <p className="mt-5 max-w-sm text-sm text-primary-foreground/70">
-              Intelligent metering for water, electricity and gas utilities.
-              Built on IoT, ML and zero-trust cloud.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-display text-xs uppercase tracking-[0.2em] text-primary-foreground/60">
-              Solutions
-            </h4>
-            <ul className="mt-4 space-y-2 text-sm">
-              <li>Smart Water</li>
-              <li>Smart Electricity</li>
-              <li>Smart Gas</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-display text-xs uppercase tracking-[0.2em] text-primary-foreground/60">
-              Company
-            </h4>
-            <ul className="mt-4 space-y-2 text-sm">
-              <li><Link to="/about" className="hover:text-primary-foreground transition-colors">About</Link></li>
-              <li><Link to="/careers" className="hover:text-primary-foreground transition-colors">Careers</Link></li>
-              <li><a href="mailto:hello@quantumconnect.africa" className="hover:text-primary-foreground transition-colors">Contact</a></li>
-            </ul>
-          </div>
-        </div>
-        <div className="border-t border-primary-foreground/10">
-          <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-3 px-6 py-6 text-xs text-primary-foreground/60 md:flex-row md:items-center">
-            <p>© {new Date().getFullYear()} QuantumConnect. All rights reserved.</p>
-            <p className="uppercase tracking-[0.2em]">Measured. Connected. Trusted.</p>
-          </div>
-        </div>
-      </footer>
+      </main>
+      <PublicFooter />
     </div>
   );
 };

@@ -2,16 +2,19 @@ package africa.quantum.quantumtech.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import org.hibernate.annotations.SQLRestriction;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@SQLRestriction("deleted_at IS NULL")
+@Table(name = "users", uniqueConstraints = @UniqueConstraint(columnNames = {"email", "tenant_id"}))
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String email;
 
     @JsonIgnore
@@ -38,6 +41,13 @@ public class User {
 
     @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean phoneVerified = false;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
+
+    private LocalDateTime deletedAt;
 
     // ── Getters & Setters ──────────────────────────────────────────────────────
 
@@ -69,6 +79,12 @@ public class User {
 
     public boolean isPhoneVerified() { return phoneVerified; }
     public void setPhoneVerified(boolean phoneVerified) { this.phoneVerified = phoneVerified; }
+
+    public Tenant getTenant() { return tenant; }
+    public void setTenant(Tenant tenant) { this.tenant = tenant; }
+
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 
     public String getFullName() {
         return (firstName + " " + lastName).trim();

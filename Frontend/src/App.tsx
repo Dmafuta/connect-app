@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardShell from "@/components/dashboard/DashboardShell";
+import ScrollToTop from "@/components/ScrollToTop";
 
 import Landing      from "./pages/Landing.tsx";
 import Auth         from "./pages/Auth.tsx";
@@ -15,7 +16,8 @@ import Forbidden    from "./pages/Forbidden.tsx";
 import ComingSoon   from "./pages/ComingSoon.tsx";
 import ServerError  from "./pages/ServerError.tsx";
 import Careers      from "./pages/Careers.tsx";
-import About        from "./pages/About.tsx";
+import About         from "./pages/About.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 
 // Dashboard pages
 import Overview      from "./pages/dashboard/Overview.tsx";
@@ -26,8 +28,12 @@ import Meters        from "./pages/dashboard/Meters.tsx";
 import Readings      from "./pages/dashboard/Readings.tsx";
 import Alerts        from "./pages/dashboard/Alerts.tsx";
 import Transactions  from "./pages/dashboard/Transactions.tsx";
-import MyMeters      from "./pages/dashboard/MyMeters.tsx";
+import MyMeters           from "./pages/dashboard/MyMeters.tsx";
+import TechnicianMeters   from "./pages/dashboard/TechnicianMeters.tsx";
 import Settings      from "./pages/dashboard/Settings.tsx";
+import Tenants       from "./pages/dashboard/Tenants.tsx";
+import AuditLog      from "./pages/dashboard/AuditLog.tsx";
+import Reports       from "./pages/dashboard/Reports.tsx";
 
 const queryClient = new QueryClient();
 
@@ -44,11 +50,13 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             {/* Public */}
             <Route path="/"              element={<Landing />} />
             <Route path="/auth"          element={<Auth />} />
-            <Route path="/verify-email"  element={<VerifyEmail />} />
+            <Route path="/verify-email"   element={<VerifyEmail />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/403"           element={<Forbidden />} />
             <Route path="/500"           element={<ServerError />} />
             <Route path="/coming-soon"   element={<ComingSoon />} />
@@ -62,14 +70,18 @@ const App = () => (
             <Route path="/dashboard/my-meters"    element={<DashboardLayout><MyMeters /></DashboardLayout>} />
 
             {/* Admin + SUPER_ADMIN */}
+            <Route path="/dashboard/reports"     element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN"]}><Reports /></ProtectedRoute></DashboardLayout>} />
             <Route path="/dashboard/customers"   element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN"]}><Customers /></ProtectedRoute></DashboardLayout>} />
             <Route path="/dashboard/technicians" element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN"]}><Technicians /></ProtectedRoute></DashboardLayout>} />
             <Route path="/dashboard/meters"      element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN","TECHNICIAN"]}><Meters /></ProtectedRoute></DashboardLayout>} />
-            <Route path="/dashboard/alerts"      element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN","TECHNICIAN"]}><Alerts /></ProtectedRoute></DashboardLayout>} />
+            <Route path="/dashboard/alerts"          element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN","TECHNICIAN"]}><Alerts /></ProtectedRoute></DashboardLayout>} />
+            <Route path="/dashboard/my-assignments"  element={<DashboardLayout><ProtectedRoute allowedRoles={["TECHNICIAN"]}><TechnicianMeters /></ProtectedRoute></DashboardLayout>} />
             <Route path="/dashboard/settings"    element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN"]}><Settings /></ProtectedRoute></DashboardLayout>} />
 
             {/* SUPER_ADMIN only */}
-            <Route path="/dashboard/users" element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN"]}><Users /></ProtectedRoute></DashboardLayout>} />
+            <Route path="/dashboard/users"    element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN"]}><Users /></ProtectedRoute></DashboardLayout>} />
+            <Route path="/dashboard/tenants"   element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN"]}><Tenants /></ProtectedRoute></DashboardLayout>} />
+            <Route path="/dashboard/audit"     element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN"]}><AuditLog /></ProtectedRoute></DashboardLayout>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

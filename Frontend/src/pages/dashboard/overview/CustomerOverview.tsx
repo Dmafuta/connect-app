@@ -34,6 +34,15 @@ export default function CustomerOverview() {
     name: `${i+1}`, v: r.value,
   }));
 
+  // Per-meter consumption: last reading minus first reading per meter
+  const meterConsumption = meters.map((m: any) => {
+    const mReadings = readings.filter((r: any) => r.meter?.id === m.id || r.meter?.serialNumber === m.serialNumber);
+    const sorted = [...mReadings].sort((a: any, b: any) => new Date(a.readAt).getTime() - new Date(b.readAt).getTime());
+    const first = sorted[0]?.value ?? null;
+    const last  = sorted[sorted.length - 1]?.value ?? null;
+    return { ...m, first, last, consumption: first !== null && last !== null ? last - first : null, readingCount: sorted.length };
+  });
+
   if (loading) return <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">Loading…</div>;
 
   return (
@@ -83,6 +92,38 @@ export default function CustomerOverview() {
           </div>
         )}
       </div>
+
+      {/* Per-meter consumption breakdown */}
+      {meterConsumption.length > 0 && (
+        <div className="rounded-none border border-border bg-card p-5">
+          <h3 className="font-display text-sm font-semibold uppercase tracking-[0.15em] mb-4">Consumption by Meter</h3>
+          <div className="divide-y divide-border">
+            {meterConsumption.map((m: any) => {
+              const Icon  = TYPE_ICON[m.type]  ?? Gauge;
+              const color = TYPE_COLOR[m.type] ?? "#888";
+              return (
+                <div key={m.id} className="flex items-center gap-4 py-3">
+                  <Icon className="h-5 w-5 shrink-0" style={{ color }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{m.serialNumber}</p>
+                    <p className="text-xs text-muted-foreground">{m.readingCount} readings</p>
+                  </div>
+                  <div className="text-right">
+                    {m.consumption !== null ? (
+                      <>
+                        <p className="text-sm font-semibold">{m.consumption.toFixed(2)}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase">total consumption</p>
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No readings</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* My meters */}

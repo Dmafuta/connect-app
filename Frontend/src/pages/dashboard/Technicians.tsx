@@ -19,7 +19,10 @@ export default function Technicians() {
 
   const load = () => {
     setLoading(true);
-    api.get<any[]>("/api/users/technicians").then(setTechnicians).finally(() => setLoading(false));
+    api.get<any[]>("/api/users/technicians")
+      .then(setTechnicians)
+      .catch(err => toast({ title: "Error loading technicians", description: err.message, variant: "destructive" }))
+      .finally(() => setLoading(false));
   };
   useEffect(() => { load(); }, []);
 
@@ -92,16 +95,35 @@ export default function Technicians() {
         <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search technicians…" className="rounded-none pl-9" />
       </div>
 
-      <div className="rounded-none border border-border bg-card">
+      <div className="overflow-x-auto">
+        <div className="min-w-[500px] rounded-none border border-border bg-card">
         <div className="grid grid-cols-[1fr_1fr_1fr_80px] border-b border-border bg-muted px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
           <span>Name</span><span>Email</span><span>Phone</span><span>Status</span>
         </div>
         {loading ? (
           <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">Loading…</div>
         ) : filtered.length === 0 ? (
-          <div className="flex h-32 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Wrench className="h-8 w-8 opacity-30" />
-            {search ? "No technicians match your search." : "No technicians yet. Add one above."}
+          <div className="flex h-48 flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+            <Wrench className="h-10 w-10 opacity-20" />
+            <div className="text-center">
+              {search ? (
+                <>
+                  <p className="font-medium text-foreground">No technicians match "{search}"</p>
+                  <p className="mt-1 text-xs">Try a different name or email address.</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium text-foreground">No technicians on your team yet</p>
+                  <p className="mt-1 text-xs">Add a technician to assign them to meters and enable field readings.</p>
+                  <button
+                    onClick={() => setOpen(true)}
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-none border border-brand-red px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-brand-red hover:bg-brand-red hover:text-white transition-colors"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" /> Add Technician
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         ) : (
           filtered.map(t => (
@@ -115,6 +137,7 @@ export default function Technicians() {
             </div>
           ))
         )}
+        </div>
       </div>
     </div>
   );

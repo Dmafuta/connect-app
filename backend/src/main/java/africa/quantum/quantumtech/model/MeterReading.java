@@ -1,5 +1,6 @@
 package africa.quantum.quantumtech.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -13,7 +14,7 @@ public class MeterReading {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "meter_id", nullable = false)
     private Meter meter;
 
@@ -25,7 +26,7 @@ public class MeterReading {
     @Enumerated(EnumType.STRING)
     private ReadingType readingType = ReadingType.AUTOMATIC;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "recorded_by")
     private User recordedBy;
 

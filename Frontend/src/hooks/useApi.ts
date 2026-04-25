@@ -17,7 +17,7 @@ export function useApi() {
     if (res.status === 401) { logout(); throw new Error("Session expired"); }
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error((err as any).message || `HTTP ${res.status}`);
+      throw new Error((err as any).error || (err as any).message || `HTTP ${res.status}`);
     }
     return res.json();
   }

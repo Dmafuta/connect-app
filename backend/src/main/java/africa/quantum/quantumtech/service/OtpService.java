@@ -97,6 +97,40 @@ public class OtpService {
     }
 
     /**
+     * Generates a UUID token scoped to the tenant, stores it, and sends a password reset link.
+     * Token expires in 1 hour and is consumed on first use.
+     * The OTP key is {@code email:tenantCode} so resets are isolated per tenant.
+     *
+     * @param email      recipient email address
+     * @param tenantCode the tenant's 6-digit org code
+     * @param appUrl     frontend base URL
+     */
+    @Transactional
+    public void sendPasswordResetLink(String email, String tenantCode, String appUrl) {
+        String key   = email + ":" + tenantCode;
+        String token = UUID.randomUUID().toString();
+
+        otpRepository.invalidatePrevious(key, "PASSWORD_RESET_LINK");
+
+        OtpRecord record = new OtpRecord();
+        record.setEmail(key);
+        record.setCode(token);
+        record.setPurpose("PASSWORD_RESET_LINK");
+        record.setCreatedAt(Instant.now());
+        record.setExpiresAt(Instant.now().plus(1, ChronoUnit.HOURS));
+        otpRepository.save(record);
+
+        String link = appUrl + "/reset-password?token=" + token
+                + "&email=" + java.net.URLEncoder.encode(email, java.nio.charset.StandardCharsets.UTF_8)
+                + "&tenant=" + tenantCode;
+        emailService.sendEmail(
+            email,
+            "Reset your QuantumConnect password",
+            EmailService.passwordResetBody(link)
+        );
+    }
+
+    /**
      * Send the SAME OTP code to both email and SMS (if phone is provided).
      * Verification is always done against the email target.
      *

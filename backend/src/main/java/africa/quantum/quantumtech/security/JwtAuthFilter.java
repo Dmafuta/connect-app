@@ -29,9 +29,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
+        // Fallback: SSE clients (EventSource) cannot send headers — accept token as query param
+        if ((authHeader == null || !authHeader.startsWith("Bearer ")) && request.getParameter("token") != null) {
+            authHeader = "Bearer " + request.getParameter("token");
+        }
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             if (jwtUtil.isTokenValid(token)) {
+                Long tenantId = jwtUtil.extractTenantId(token);
+                if (tenantId != null) {
+                    TenantContext.set(tenantId);
+                }
                 String email = jwtUtil.extractEmail(token);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
@@ -41,6 +49,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }
-        chain.doFilter(request, response);
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            TenantContext.clear();
+        }
     }
 }

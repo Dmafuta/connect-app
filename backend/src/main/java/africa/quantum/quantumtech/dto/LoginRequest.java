@@ -1,3 +1,3 @@
 package africa.quantum.quantumtech.dto;
 
-public record LoginRequest(String email, String password) {}
+public record LoginRequest(String tenantCode, String email, String password) {}

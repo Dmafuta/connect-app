@@ -27,10 +27,11 @@ public class JwtUtil {
         }
     }
 
-    public String generateToken(String email, String role) {
+    public String generateToken(String email, String role, Long tenantId) {
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role)
+                .claim("tenantId", tenantId)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getKey())
@@ -53,6 +54,18 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload()
                 .get("role");
+    }
+
+    public Long extractTenantId(String token) {
+        Object value = Jwts.parser()
+                .verifyWith(getKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("tenantId");
+        if (value instanceof Integer i) return i.longValue();
+        if (value instanceof Long l)    return l;
+        return null;
     }
 
     public boolean isTokenValid(String token) {

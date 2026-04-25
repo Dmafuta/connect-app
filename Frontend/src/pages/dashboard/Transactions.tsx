@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CreditCard, Loader2, RefreshCw } from "lucide-react";
+import { CreditCard, Loader2, RefreshCw, Download } from "lucide-react";
+import { exportCsv } from "@/lib/exportCsv";
 
 const STATUS_CLS: Record<string, string> = {
   SUCCESS: "text-emerald-600",
@@ -97,12 +98,26 @@ export default function Transactions() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-brand-red">Billing</p>
           <h1 className="font-display text-2xl font-semibold tracking-tight">Transactions</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {transactions.length > 0 && (
+            <Button variant="outline" onClick={() => exportCsv("transactions.csv",
+              ["Reference", "Phone", "Amount (KES)", "Status", "Time"],
+              transactions.map((t: any) => [
+                t.mpesaReceiptNumber ?? t.checkoutRequestId,
+                t.phoneNumber,
+                t.amount,
+                t.status,
+                t.createdAt ? new Date(t.createdAt).toLocaleString() : "",
+              ])
+            )} className="h-9 rounded-none px-4 text-xs font-semibold uppercase tracking-wider">
+              <Download className="mr-2 h-4 w-4" /> Export CSV
+            </Button>
+          )}
           {polling && (
             <span className="flex items-center gap-1.5 text-xs text-amber-600">
               <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Confirming payment…
@@ -137,16 +152,35 @@ export default function Transactions() {
         </div>
       </div>
 
-      <div className="rounded-none border border-border bg-card">
+      <div className="overflow-x-auto">
+        <div className="min-w-[550px] rounded-none border border-border bg-card">
         <div className="grid grid-cols-[1fr_120px_100px_120px_80px] border-b border-border bg-muted px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
           <span>Reference</span><span>Phone</span><span>Amount</span><span>Time</span><span>Status</span>
         </div>
         {loading ? (
           <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">Loading…</div>
         ) : transactions.length === 0 ? (
-          <div className="flex h-32 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-            <CreditCard className="h-8 w-8 opacity-30" />
-            No transactions yet.
+          <div className="flex h-48 flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+            <CreditCard className="h-10 w-10 opacity-20" />
+            <div className="text-center">
+              {isCustomer ? (
+                <>
+                  <p className="font-medium text-foreground">No payments yet</p>
+                  <p className="mt-1 text-xs">Pay your utility bill instantly via M-Pesa STK Push.</p>
+                  <button
+                    onClick={() => setOpen(true)}
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-none border border-brand-red px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-brand-red hover:bg-brand-red hover:text-white transition-colors"
+                  >
+                    <CreditCard className="h-3.5 w-3.5" /> Pay via M-Pesa
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium text-foreground">No transactions recorded</p>
+                  <p className="mt-1 text-xs">Customer M-Pesa payments will appear here once processed.</p>
+                </>
+              )}
+            </div>
           </div>
         ) : (
           transactions.map((t: any) => (
@@ -163,6 +197,7 @@ export default function Transactions() {
             </div>
           ))
         )}
+        </div>
       </div>
     </div>
   );

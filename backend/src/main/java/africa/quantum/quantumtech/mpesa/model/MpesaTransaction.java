@@ -37,6 +37,8 @@ public class MpesaTransaction {
     /** Optional: link to the platform user who initiated the payment */
     private Long userId;
 
+    private Long tenantId;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -70,6 +72,8 @@ public class MpesaTransaction {
     public String getMpesaReceiptNumber()        { return mpesaReceiptNumber; }
     public String getTransactionDate()           { return transactionDate; }
     public Long getUserId()                      { return userId; }
+    public Long getTenantId()                    { return tenantId; }
+    public void setTenantId(Long v)              { this.tenantId = v; }
     public LocalDateTime getCreatedAt()          { return createdAt; }
     public LocalDateTime getUpdatedAt()          { return updatedAt; }
 

@@ -12,5 +12,8 @@ public interface MpesaTransactionRepository extends JpaRepository<MpesaTransacti
 
     Optional<MpesaTransaction> findByMerchantRequestId(String merchantRequestId);
 
+    List<MpesaTransaction> findByUserIdAndTenantIdOrderByCreatedAtDesc(Long userId, Long tenantId);
+
+    // Legacy — unscoped
     List<MpesaTransaction> findByUserIdOrderByCreatedAtDesc(Long userId);
 }

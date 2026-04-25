@@ -1,10 +1,14 @@
 package africa.quantum.quantumtech.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import africa.quantum.quantumtech.model.Tenant;
 import jakarta.persistence.*;
+import org.hibernate.annotations.SQLRestriction;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "meters")
+@SQLRestriction("deleted_at IS NULL")
 public class Meter {
 
     public enum Type   { WATER, ELECTRICITY, GAS }
@@ -28,16 +32,22 @@ public class Meter {
     private String location;
 
     /** The customer this meter is assigned to */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_id")
     private User customer;
 
     /** The technician responsible for this meter */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "technician_id")
     private User technician;
 
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
+
     private LocalDateTime installedAt = LocalDateTime.now();
+    private LocalDateTime deletedAt;
 
     // ── Getters & Setters ──────────────────────────────────────────────────────
 
@@ -54,6 +64,11 @@ public class Meter {
     public void setCustomer(User customer) { this.customer = customer; }
     public User getTechnician() { return technician; }
     public void setTechnician(User technician) { this.technician = technician; }
+    public Tenant getTenant() { return tenant; }
+    public void setTenant(Tenant tenant) { this.tenant = tenant; }
+
     public LocalDateTime getInstalledAt() { return installedAt; }
     public void setInstalledAt(LocalDateTime installedAt) { this.installedAt = installedAt; }
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 }

@@ -5,16 +5,15 @@ import {
   Target,
   Compass,
   Sparkles,
-  Globe2,
   Droplets,
   Zap,
   Flame,
   ShieldCheck,
-  Users,
-  Building2,
   Leaf,
 } from "lucide-react";
 import aboutMission from "@/assets/about-mission.jpg";
+import PublicHeader from "@/components/public/PublicHeader";
+import PublicFooter from "@/components/public/PublicFooter";
 
 const values = [
   {
@@ -78,33 +77,14 @@ const leadership = [
 
 const About = () => {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <PublicHeader navItems={[
+        { label: "Home",          href: "/" },
+        { label: "About",         href: "/about",   active: true },
+        { label: "Opportunities", href: "/careers" },
+      ]} />
 
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-2.5">
-            <span className="relative flex h-8 w-8 items-center justify-center">
-              <span className="absolute inset-0 rounded-full border-2 border-brand-red" />
-              <span className="absolute inset-1.5 rounded-full border-2 border-brand-black" />
-            </span>
-            <span className="font-display text-lg font-semibold tracking-tight">
-              QuantumConnect
-            </span>
-          </Link>
-          <nav className="hidden items-center gap-8 text-sm md:flex">
-            <Link to="/" className="text-muted-foreground hover:text-foreground">Home</Link>
-            <Link to="/about" className="text-foreground">About</Link>
-            <Link to="/careers" className="text-muted-foreground hover:text-foreground">Careers</Link>
-          </nav>
-          <Link to="/auth">
-            <Button className="h-10 rounded-none bg-brand-black font-display text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground hover:bg-brand-red">
-              Sign in
-            </Button>
-          </Link>
-        </div>
-      </header>
-
+      <main className="flex-1">
       {/* ── Hero ── */}
       <section className="relative overflow-hidden border-b border-border bg-brand-black text-primary-foreground">
         <div className="mx-auto grid max-w-7xl gap-0 lg:grid-cols-12">
@@ -335,19 +315,8 @@ const About = () => {
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="border-t border-border bg-background">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-8 text-xs text-muted-foreground md:flex-row">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            <span>© {new Date().getFullYear()} QuantumConnect. All rights reserved.</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <Globe2 className="h-4 w-4" />
-            <Users className="h-4 w-4" />
-          </div>
-        </div>
-      </footer>
+      </main>
+      <PublicFooter />
     </div>
   );
 };
