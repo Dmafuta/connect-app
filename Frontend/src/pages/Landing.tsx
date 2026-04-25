@@ -443,8 +443,8 @@ const Landing = () => {
             </h4>
             <ul className="mt-4 space-y-2 text-sm">
               <li>About</li>
-              <li>Careers</li>
-              <li>Contact</li>
+              <li><Link to="/careers" className="hover:text-primary-foreground transition-colors">Careers</Link></li>
+              <li><a href="mailto:hello@quantumconnect.africa" className="hover:text-primary-foreground transition-colors">Contact</a></li>
             </ul>
           </div>
         </div>

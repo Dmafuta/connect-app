@@ -14,6 +14,7 @@ import NotFound     from "./pages/NotFound.tsx";
 import Forbidden    from "./pages/Forbidden.tsx";
 import ComingSoon   from "./pages/ComingSoon.tsx";
 import ServerError  from "./pages/ServerError.tsx";
+import Careers      from "./pages/Careers.tsx";
 
 // Dashboard pages
 import Overview      from "./pages/dashboard/Overview.tsx";
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/403"           element={<Forbidden />} />
             <Route path="/500"           element={<ServerError />} />
             <Route path="/coming-soon"   element={<ComingSoon />} />
+            <Route path="/careers"       element={<Careers />} />
 
             {/* Dashboard — all authenticated */}
             <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
