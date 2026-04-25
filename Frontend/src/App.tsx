@@ -12,6 +12,8 @@ import Auth         from "./pages/Auth.tsx";
 import VerifyEmail  from "./pages/VerifyEmail.tsx";
 import NotFound     from "./pages/NotFound.tsx";
 import Forbidden    from "./pages/Forbidden.tsx";
+import ComingSoon   from "./pages/ComingSoon.tsx";
+import ServerError  from "./pages/ServerError.tsx";
 
 // Dashboard pages
 import Overview      from "./pages/dashboard/Overview.tsx";
@@ -46,6 +48,8 @@ const App = () => (
             <Route path="/auth"          element={<Auth />} />
             <Route path="/verify-email"  element={<VerifyEmail />} />
             <Route path="/403"           element={<Forbidden />} />
+            <Route path="/500"           element={<ServerError />} />
+            <Route path="/coming-soon"   element={<ComingSoon />} />
 
             {/* Dashboard — all authenticated */}
             <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
