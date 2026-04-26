@@ -48,7 +48,7 @@ public class MeterController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN','TECHNICIAN')")
     public Page<Meter> allMeters(
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -57,7 +57,7 @@ public class MeterController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN','TECHNICIAN')")
     public ResponseEntity<Meter> getMeter(@PathVariable Long id) {
         return meterRepository.findByIdAndTenantId(id, TenantContext.get())
                 .map(ResponseEntity::ok)
@@ -74,7 +74,7 @@ public class MeterController {
 
     /** Technician's assigned meters */
     @GetMapping("/assigned")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN','TECHNICIAN')")
     public ResponseEntity<List<Meter>> assignedMeters(@RequestHeader("Authorization") String authHeader) {
         String email = jwtUtil.extractEmail(authHeader.substring(7));
         User tech = userRepository.findByEmailAndTenant(email, currentTenant()).orElseThrow();
@@ -82,7 +82,7 @@ public class MeterController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createMeter(@RequestHeader("Authorization") String authHeader,
                                          @RequestBody Map<String, String> body,
                                          HttpServletRequest request) {
@@ -94,6 +94,7 @@ public class MeterController {
         Meter meter = new Meter();
         meter.setSerialNumber(serial);
         meter.setType(Meter.Type.valueOf(body.get("type")));
+        if (body.containsKey("mode")) meter.setMode(Meter.Mode.valueOf(body.get("mode")));
         meter.setLocation(body.get("location"));
         meter.setTenant(tenant);
         if (body.containsKey("customerId") && !body.get("customerId").isBlank()) {
@@ -114,7 +115,7 @@ public class MeterController {
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Meter> updateMeter(@PathVariable Long id,
                                              @RequestBody Map<String, String> body,
                                              @RequestHeader("Authorization") String authHeader,
@@ -149,7 +150,7 @@ public class MeterController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteMeter(@PathVariable Long id,
                                             @RequestHeader("Authorization") String authHeader,
                                             HttpServletRequest request) {
@@ -166,7 +167,7 @@ public class MeterController {
     }
 
     @PatchMapping("/{id}/restore")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> restoreMeter(@PathVariable Long id,
                                              @RequestHeader("Authorization") String authHeader,
                                              HttpServletRequest request) {

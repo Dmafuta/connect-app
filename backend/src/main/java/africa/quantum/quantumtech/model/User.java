@@ -7,7 +7,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @SQLRestriction("deleted_at IS NULL")
-@Table(name = "users", uniqueConstraints = @UniqueConstraint(columnNames = {"email", "tenant_id"}))
+@Table(name = "users", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"email",    "tenant_id"}, name = "uk_users_email_tenant"),
+    @UniqueConstraint(columnNames = {"username", "tenant_id"}, name = "uk_users_username_tenant")
+})
 public class User {
 
     @Id
@@ -16,6 +19,10 @@ public class User {
 
     @Column(nullable = false)
     private String email;
+
+    /** Unique per tenant; used as an alternative login identifier. Null for SUPER_ADMIN. */
+    @Column(name = "username")
+    private String username;
 
     @JsonIgnore
     @Column(nullable = false)
@@ -44,7 +51,7 @@ public class User {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tenant_id", nullable = false)
+    @JoinColumn(name = "tenant_id", nullable = true)
     private Tenant tenant;
 
     private LocalDateTime deletedAt;
@@ -55,6 +62,9 @@ public class User {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }

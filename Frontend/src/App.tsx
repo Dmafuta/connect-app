@@ -33,8 +33,10 @@ const MyMeters         = lazy(() => import("./pages/dashboard/MyMeters"));
 const TechnicianMeters = lazy(() => import("./pages/dashboard/TechnicianMeters"));
 const Settings         = lazy(() => import("./pages/dashboard/Settings"));
 const Tenants          = lazy(() => import("./pages/dashboard/Tenants"));
+const Inventory        = lazy(() => import("./pages/dashboard/Inventory"));
 const AuditLog         = lazy(() => import("./pages/dashboard/AuditLog"));
 const Reports          = lazy(() => import("./pages/dashboard/Reports"));
+const Invoices         = lazy(() => import("./pages/dashboard/Invoices"));
 
 const queryClient = new QueryClient();
 
@@ -68,22 +70,28 @@ const App = () => (
             {/* Dashboard — all authenticated */}
             <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
             <Route path="/dashboard/readings"     element={<DashboardLayout><Readings /></DashboardLayout>} />
+            <Route path="/dashboard/invoices"     element={<DashboardLayout><ProtectedRoute allowedRoles={["ADMIN","CUSTOMER"]}><Invoices /></ProtectedRoute></DashboardLayout>} />
             <Route path="/dashboard/transactions" element={<DashboardLayout><Transactions /></DashboardLayout>} />
             <Route path="/dashboard/my-meters"    element={<DashboardLayout><MyMeters /></DashboardLayout>} />
 
-            {/* Admin + SUPER_ADMIN */}
-            <Route path="/dashboard/reports"     element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN"]}><Reports /></ProtectedRoute></DashboardLayout>} />
-            <Route path="/dashboard/customers"   element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN"]}><Customers /></ProtectedRoute></DashboardLayout>} />
-            <Route path="/dashboard/technicians" element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN"]}><Technicians /></ProtectedRoute></DashboardLayout>} />
-            <Route path="/dashboard/meters"      element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN","TECHNICIAN"]}><Meters /></ProtectedRoute></DashboardLayout>} />
-            <Route path="/dashboard/alerts"          element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN","TECHNICIAN"]}><Alerts /></ProtectedRoute></DashboardLayout>} />
-            <Route path="/dashboard/my-assignments"  element={<DashboardLayout><ProtectedRoute allowedRoles={["TECHNICIAN"]}><TechnicianMeters /></ProtectedRoute></DashboardLayout>} />
-            <Route path="/dashboard/settings"    element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN"]}><Settings /></ProtectedRoute></DashboardLayout>} />
+            {/* ADMIN + TECHNICIAN */}
+            <Route path="/dashboard/meters"      element={<DashboardLayout><ProtectedRoute allowedRoles={["ADMIN","TECHNICIAN"]}><Meters /></ProtectedRoute></DashboardLayout>} />
+            <Route path="/dashboard/alerts"      element={<DashboardLayout><ProtectedRoute allowedRoles={["ADMIN","TECHNICIAN"]}><Alerts /></ProtectedRoute></DashboardLayout>} />
+            <Route path="/dashboard/my-assignments" element={<DashboardLayout><ProtectedRoute allowedRoles={["TECHNICIAN"]}><TechnicianMeters /></ProtectedRoute></DashboardLayout>} />
+
+            {/* ADMIN only */}
+            <Route path="/dashboard/reports"     element={<DashboardLayout><ProtectedRoute allowedRoles={["ADMIN"]}><Reports /></ProtectedRoute></DashboardLayout>} />
+            <Route path="/dashboard/customers"   element={<DashboardLayout><ProtectedRoute allowedRoles={["ADMIN"]}><Customers /></ProtectedRoute></DashboardLayout>} />
+            <Route path="/dashboard/technicians" element={<DashboardLayout><ProtectedRoute allowedRoles={["ADMIN"]}><Technicians /></ProtectedRoute></DashboardLayout>} />
+            <Route path="/dashboard/users"       element={<DashboardLayout><ProtectedRoute allowedRoles={["ADMIN"]}><Users /></ProtectedRoute></DashboardLayout>} />
 
             {/* SUPER_ADMIN only */}
-            <Route path="/dashboard/users"    element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN"]}><Users /></ProtectedRoute></DashboardLayout>} />
-            <Route path="/dashboard/tenants"   element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN"]}><Tenants /></ProtectedRoute></DashboardLayout>} />
-            <Route path="/dashboard/audit"     element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN"]}><AuditLog /></ProtectedRoute></DashboardLayout>} />
+            <Route path="/dashboard/tenants"     element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN"]}><Tenants /></ProtectedRoute></DashboardLayout>} />
+            <Route path="/dashboard/inventory"   element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN"]}><Inventory /></ProtectedRoute></DashboardLayout>} />
+
+            {/* SUPER_ADMIN + ADMIN */}
+            <Route path="/dashboard/settings"    element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN"]}><Settings /></ProtectedRoute></DashboardLayout>} />
+            <Route path="/dashboard/audit"       element={<DashboardLayout><ProtectedRoute allowedRoles={["SUPER_ADMIN","ADMIN"]}><AuditLog /></ProtectedRoute></DashboardLayout>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

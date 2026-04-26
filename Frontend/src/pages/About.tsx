@@ -69,7 +69,7 @@ const stats = [
 ];
 
 const leadership = [
-  { name: "M. Carvalho", role: "Co-founder & CEO", initials: "MC" },
+  { name: "M. Dennis", role: "Founder & CEO", initials: "DS" },
   { name: "S. Almeida",  role: "Co-founder & CTO", initials: "SA" },
   { name: "R. Tavares",  role: "VP Hardware",       initials: "RT" },
   { name: "I. Pereira",  role: "VP Cloud & AI",     initials: "IP" },

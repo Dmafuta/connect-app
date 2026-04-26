@@ -20,8 +20,10 @@ const ROLE_CLS: Record<string, string> = {
   CUSTOMER:    "bg-slate-100 text-slate-600",
 };
 
-const ROLES = ["SUPER_ADMIN", "ADMIN", "TECHNICIAN", "CUSTOMER"];
-type RoleFilter = "ALL" | "SUPER_ADMIN" | "ADMIN" | "TECHNICIAN" | "CUSTOMER";
+// Roles a tenant ADMIN can assign — SUPER_ADMIN is a platform-level role, never assignable here
+const ASSIGNABLE_ROLES = ["TECHNICIAN", "CUSTOMER"];
+const FILTER_ROLES = ["ALL", "ADMIN", "TECHNICIAN", "CUSTOMER"] as const;
+type RoleFilter = typeof FILTER_ROLES[number];
 
 export default function Users() {
   const api = useApi();
@@ -36,7 +38,10 @@ export default function Users() {
   const [showDeleted,   setShowDeleted]   = useState(false);
   const [deletedUsers,  setDeletedUsers]  = useState<any[]>([]);
   const [loadingDeleted, setLoadingDeleted] = useState(false);
-  const [form,    setForm]    = useState({ firstName: "", lastName: "", email: "", phone: "", role: "CUSTOMER", password: "ChangeMe123!" });
+  const [form,    setForm]    = useState({ firstName: "", lastName: "", email: "", phone: "", role: "CUSTOMER", password: "ChangeMe123!", username: "" });
+  const [formUsernameEdited, setFormUsernameEdited] = useState(false);
+  const [changeUsernameUser,  setChangeUsernameUser]  = useState<any | null>(null);
+  const [newUsername, setNewUsername] = useState("");
 
   const load = (p = 0) => {
     setLoading(true);
@@ -48,6 +53,12 @@ export default function Users() {
 
   const handlePageChange = (p: number) => { setPageNum(p); setSearch(""); };
 
+  const suggestUsername = (first: string, last: string) => {
+    if (formUsernameEdited) return;
+    const raw = `${first.trim()}.${last.trim()}`.toLowerCase().replace(/[^a-z0-9._-]/g, "").replace(/\.+/g, ".").replace(/^\./, "");
+    setForm(f => ({ ...f, username: raw.substring(0, 30) }));
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -55,7 +66,8 @@ export default function Users() {
       await api.post("/api/users", form);
       toast({ title: "User created", description: `${form.firstName} ${form.lastName} added.` });
       setOpen(false);
-      setForm({ firstName: "", lastName: "", email: "", phone: "", role: "CUSTOMER", password: "ChangeMe123!" });
+      setForm({ firstName: "", lastName: "", email: "", phone: "", role: "CUSTOMER", password: "ChangeMe123!", username: "" });
+      setFormUsernameEdited(false);
       load(pageNum);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -118,10 +130,25 @@ export default function Users() {
     }
   };
 
+  const handleChangeUsername = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!changeUsernameUser) return;
+    setSaving(true);
+    try {
+      await api.patch(`/api/users/${changeUsernameUser.id}`, { username: newUsername });
+      setPage(prev => prev ? { ...prev, content: prev.content.map(u => u.id === changeUsernameUser.id ? { ...u, username: newUsername } : u) } : prev);
+      toast({ title: "Username updated" });
+      setChangeUsernameUser(null);
+      setNewUsername("");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
   const users = page?.content ?? [];
   const filtered = users.filter(u => {
     const matchRole   = role === "ALL" || u.role === role;
-    const matchSearch = `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = `${u.firstName} ${u.lastName} ${u.email} ${u.username ?? ""}`.toLowerCase().includes(search.toLowerCase());
     return matchRole && matchSearch;
   });
 
@@ -152,12 +179,16 @@ export default function Users() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">First name</Label>
-                  <Input value={form.firstName} onChange={e => setForm(f => ({...f, firstName: e.target.value}))} required placeholder="Jane" className="rounded-none" />
+                  <Input value={form.firstName} onChange={e => { setForm(f => ({...f, firstName: e.target.value})); suggestUsername(e.target.value, form.lastName); }} required placeholder="Jane" className="rounded-none" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Last name</Label>
-                  <Input value={form.lastName} onChange={e => setForm(f => ({...f, lastName: e.target.value}))} placeholder="Doe" className="rounded-none" />
+                  <Input value={form.lastName} onChange={e => { setForm(f => ({...f, lastName: e.target.value})); suggestUsername(form.firstName, e.target.value); }} placeholder="Doe" className="rounded-none" />
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Username</Label>
+                <Input value={form.username} onChange={e => { setForm(f => ({...f, username: e.target.value})); setFormUsernameEdited(true); }} required placeholder="jane.doe" minLength={3} maxLength={30} pattern="^[a-zA-Z0-9._-]{3,30}$" title="3–30 characters: letters, numbers, dots, underscores, hyphens" className="rounded-none" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Email</Label>
@@ -172,7 +203,7 @@ export default function Users() {
                 <Select value={form.role} onValueChange={v => setForm(f => ({...f, role: v}))}>
                   <SelectTrigger className="rounded-none"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {ROLES.map(r => <SelectItem key={r} value={r}>{r.replace("_", " ")}</SelectItem>)}
+                    {ASSIGNABLE_ROLES.map(r => <SelectItem key={r} value={r}>{r.replace("_", " ")}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -195,7 +226,7 @@ export default function Users() {
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users…" className="rounded-none pl-9" />
         </div>
         <div className="flex items-center gap-1 border-b border-border sm:border-b-0">
-          {(["ALL", "SUPER_ADMIN", "ADMIN", "TECHNICIAN", "CUSTOMER"] as RoleFilter[]).map(r => (
+          {FILTER_ROLES.map(r => (
             <button key={r} onClick={() => setRole(r)}
               className={`px-3 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors ${
                 role === r ? "border-b-2 border-brand-red text-brand-red" : "text-muted-foreground hover:text-foreground"
@@ -211,6 +242,7 @@ export default function Users() {
           <TableHeader>
             <TableRow className="bg-muted hover:bg-muted">
               <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Name</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Username</TableHead>
               <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Email</TableHead>
               <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-32">Role</TableHead>
               <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-24">Status</TableHead>
@@ -219,11 +251,11 @@ export default function Users() {
           </TableHeader>
           <TableBody>
             {loading || loadingDeleted ? (
-              <TableRow><TableCell colSpan={5} className="h-32 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="h-32 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
             ) : showDeleted ? (
               deletedUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-32 text-center">
+                  <TableCell colSpan={6} className="h-32 text-center">
                     <div className="flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
                       <UsersIcon className="h-8 w-8 opacity-30" />
                       No deleted users.
@@ -236,6 +268,7 @@ export default function Users() {
                   .map(u => (
                     <TableRow key={u.id} className="bg-muted/20 hover:bg-muted/30">
                       <TableCell className="font-medium text-muted-foreground line-through">{u.firstName} {u.lastName}</TableCell>
+                      <TableCell className="text-muted-foreground font-mono text-xs">{u.username ? `@${u.username}` : "—"}</TableCell>
                       <TableCell className="text-muted-foreground truncate">{u.email}</TableCell>
                       <TableCell>
                         <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase opacity-50 ${ROLE_CLS[u.role] ?? "bg-muted text-muted-foreground"}`}>
@@ -262,7 +295,7 @@ export default function Users() {
               )
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center">
+                <TableCell colSpan={6} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
                     <UsersIcon className="h-8 w-8 opacity-30" />
                     No users found.
@@ -273,6 +306,7 @@ export default function Users() {
               filtered.map(u => (
                 <TableRow key={u.id}>
                   <TableCell className="font-medium">{u.firstName} {u.lastName}</TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{u.username ? `@${u.username}` : "—"}</TableCell>
                   <TableCell className="text-muted-foreground truncate">{u.email}</TableCell>
                   <TableCell>
                     <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase ${ROLE_CLS[u.role] ?? "bg-muted text-muted-foreground"}`}>
@@ -289,11 +323,14 @@ export default function Users() {
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-none w-44">
+                      <DropdownMenuContent align="end" className="rounded-none w-48">
                         <DropdownMenuItem onClick={() => toggleActive(u)} className="text-xs">
                           {u.active ? "Deactivate" : "Activate"} account
                         </DropdownMenuItem>
-                        {ROLES.filter(r => r !== u.role).map(r => (
+                        <DropdownMenuItem onClick={() => { setChangeUsernameUser(u); setNewUsername(u.username ?? ""); }} className="text-xs">
+                          Change username
+                        </DropdownMenuItem>
+                        {ASSIGNABLE_ROLES.filter(r => r !== u.role).map(r => (
                           <DropdownMenuItem key={r} onClick={() => changeRole(u, r)} className="text-xs">
                             Set as {r.replace("_", " ")}
                           </DropdownMenuItem>
@@ -313,6 +350,24 @@ export default function Users() {
       </div>
 
       {page && <Pagination meta={page} onPageChange={handlePageChange} />}
+
+      {/* Change username dialog */}
+      <Dialog open={!!changeUsernameUser} onOpenChange={open => { if (!open) { setChangeUsernameUser(null); setNewUsername(""); } }}>
+        <DialogContent className="rounded-none sm:max-w-sm">
+          <DialogHeader><DialogTitle className="font-display font-semibold">Change Username</DialogTitle></DialogHeader>
+          <form onSubmit={handleChangeUsername} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">New username</Label>
+              <Input value={newUsername} onChange={e => setNewUsername(e.target.value)} required minLength={3} maxLength={30}
+                pattern="^[a-zA-Z0-9._-]{3,30}$" title="3–30 characters: letters, numbers, dots, underscores, hyphens"
+                placeholder="jane.doe" className="rounded-none" />
+            </div>
+            <Button type="submit" disabled={saving} className="w-full rounded-none bg-brand-red text-white hover:bg-brand-red/90">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

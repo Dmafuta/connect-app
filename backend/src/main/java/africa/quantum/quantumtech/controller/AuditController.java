@@ -23,7 +23,11 @@ public class AuditController {
     public Page<AuditLog> logs(
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "50") int size) {
-        return auditLogRepository.findByTenantIdOrderByCreatedAtDesc(
-                TenantContext.get(), PageRequest.of(page, size));
+        Long tenantId = TenantContext.get();
+        if (tenantId == null) {
+            // SUPER_ADMIN: all audit logs across all tenants
+            return auditLogRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, size));
+        }
+        return auditLogRepository.findByTenantIdOrderByCreatedAtDesc(tenantId, PageRequest.of(page, size));
     }
 }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -42,6 +43,31 @@ public class StatsController {
     @GetMapping
     public Map<String, Object> stats() {
         Long tenantId = TenantContext.get();
+
+        // SUPER_ADMIN: platform-wide stats (no tenant scope)
+        if (tenantId == null) {
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("tenantCount",    tenantRepository.count());
+            result.put("userCount",      userRepository.count());
+            result.put("customerCount",  userRepository.countByRole(Role.CUSTOMER));
+            result.put("adminCount",     userRepository.countByRole(Role.ADMIN));
+            result.put("technicianCount", userRepository.countByRole(Role.TECHNICIAN));
+            result.put("activeUserCount", userRepository.countByActive(true));
+            result.put("totalMeters",    meterRepository.count());
+            result.put("activeMeters",   meterRepository.countByStatus(Meter.Status.ACTIVE));
+            result.put("faultyMeters",   meterRepository.countByStatus(Meter.Status.FAULTY));
+            result.put("waterMeters",    meterRepository.countByType(Meter.Type.WATER));
+            result.put("electricityMeters", meterRepository.countByType(Meter.Type.ELECTRICITY));
+            result.put("gasMeters",      meterRepository.countByType(Meter.Type.GAS));
+            result.put("openAlerts",     alertRepository.countByResolvedFalse());
+            result.put("resolvedAlerts", alertRepository.countByResolvedTrue());
+            result.put("recentAlerts",   alertRepository.findByResolvedFalseOrderByCreatedAtDesc()
+                    .stream().limit(5).toList());
+            result.put("recentReadings", List.of());
+            return result;
+        }
+
+        // Tenant-scoped stats
         Tenant tenant = tenantRepository.findById(tenantId).orElseThrow();
 
         Map<String, Object> result = new LinkedHashMap<>();

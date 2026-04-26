@@ -5,7 +5,7 @@ import { useAuth, UserRole } from "@/context/AuthContext";
 import {
   LayoutDashboard, Users, Gauge, Activity, AlertTriangle,
   CreditCard, Settings, LogOut, Menu, X, ChevronRight,
-  Wrench, UserCircle, Zap, Building2, ClipboardList, BarChart3, ClipboardCheck,
+  Wrench, UserCircle, Zap, Building2, ClipboardList, BarChart3, ClipboardCheck, Package, Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,20 +18,29 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { label: "Overview",      href: "/dashboard",               icon: LayoutDashboard, roles: ["SUPER_ADMIN","ADMIN","TECHNICIAN","CUSTOMER"] },
-  { label: "Users",         href: "/dashboard/users",         icon: Users,           roles: ["SUPER_ADMIN"] },
-  { label: "Tenants",       href: "/dashboard/tenants",       icon: Building2,       roles: ["SUPER_ADMIN"] },
-  { label: "Customers",     href: "/dashboard/customers",     icon: UserCircle,      roles: ["SUPER_ADMIN","ADMIN"] },
-  { label: "Technicians",   href: "/dashboard/technicians",   icon: Wrench,          roles: ["SUPER_ADMIN","ADMIN"] },
-  { label: "Meters",          href: "/dashboard/meters",          icon: Gauge,           roles: ["SUPER_ADMIN","ADMIN","TECHNICIAN"] },
-  { label: "My Assignments",  href: "/dashboard/my-assignments",  icon: ClipboardCheck,  roles: ["TECHNICIAN"] },
-  { label: "Readings",        href: "/dashboard/readings",        icon: Activity,        roles: ["SUPER_ADMIN","ADMIN","TECHNICIAN","CUSTOMER"] },
-  { label: "Alerts",        href: "/dashboard/alerts",        icon: AlertTriangle,   roles: ["SUPER_ADMIN","ADMIN","TECHNICIAN"] },
-  { label: "Transactions",  href: "/dashboard/transactions",  icon: CreditCard,      roles: ["SUPER_ADMIN","ADMIN","CUSTOMER"] },
-  { label: "My Meters",     href: "/dashboard/my-meters",     icon: Zap,             roles: ["CUSTOMER"] },
-  { label: "Reports",       href: "/dashboard/reports",       icon: BarChart3,       roles: ["SUPER_ADMIN","ADMIN"] },
-  { label: "Audit Log",    href: "/dashboard/audit",         icon: ClipboardList,   roles: ["SUPER_ADMIN","ADMIN"] },
-  { label: "Settings",     href: "/dashboard/settings",      icon: Settings,        roles: ["SUPER_ADMIN","ADMIN"] },
+  // All roles
+  { label: "Overview",        href: "/dashboard",                 icon: LayoutDashboard, roles: ["SUPER_ADMIN","ADMIN","TECHNICIAN","CUSTOMER"] },
+
+  // SUPER_ADMIN: platform-level only
+  { label: "Tenants",         href: "/dashboard/tenants",         icon: Building2,      roles: ["SUPER_ADMIN"] },
+  { label: "Inventory",       href: "/dashboard/inventory",       icon: Package,        roles: ["SUPER_ADMIN"] },
+
+  // ADMIN: full tenant management
+  { label: "Users",           href: "/dashboard/users",           icon: Users,          roles: ["ADMIN"] },
+  { label: "Customers",       href: "/dashboard/customers",       icon: UserCircle,     roles: ["ADMIN"] },
+  { label: "Technicians",     href: "/dashboard/technicians",     icon: Wrench,         roles: ["ADMIN"] },
+  { label: "Meters",          href: "/dashboard/meters",          icon: Gauge,          roles: ["ADMIN","TECHNICIAN"] },
+  { label: "My Assignments",  href: "/dashboard/my-assignments",  icon: ClipboardCheck, roles: ["TECHNICIAN"] },
+  { label: "Readings",        href: "/dashboard/readings",        icon: Activity,       roles: ["ADMIN","TECHNICIAN","CUSTOMER"] },
+  { label: "Invoices",        href: "/dashboard/invoices",        icon: Receipt,        roles: ["ADMIN","CUSTOMER"] },
+  { label: "Alerts",          href: "/dashboard/alerts",          icon: AlertTriangle,  roles: ["ADMIN","TECHNICIAN"] },
+  { label: "Transactions",    href: "/dashboard/transactions",    icon: CreditCard,     roles: ["ADMIN","CUSTOMER"] },
+  { label: "My Meters",       href: "/dashboard/my-meters",       icon: Zap,            roles: ["CUSTOMER"] },
+  { label: "Reports",         href: "/dashboard/reports",         icon: BarChart3,      roles: ["ADMIN"] },
+
+  // SUPER_ADMIN + ADMIN
+  { label: "Audit Log",       href: "/dashboard/audit",           icon: ClipboardList,  roles: ["SUPER_ADMIN","ADMIN"] },
+  { label: "Settings",        href: "/dashboard/settings",        icon: Settings,       roles: ["SUPER_ADMIN","ADMIN"] },
 ];
 
 const ROLE_LABELS: Record<UserRole, string> = {

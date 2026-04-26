@@ -30,6 +30,8 @@ public class MeterReading {
     @JoinColumn(name = "recorded_by")
     private User recordedBy;
 
+    private String notes;
+
     private LocalDateTime readAt = LocalDateTime.now();
 
     // ── Getters & Setters ──────────────────────────────────────────────────────
@@ -45,6 +47,9 @@ public class MeterReading {
     public void setReadingType(ReadingType readingType) { this.readingType = readingType; }
     public User getRecordedBy() { return recordedBy; }
     public void setRecordedBy(User recordedBy) { this.recordedBy = recordedBy; }
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
+
     public LocalDateTime getReadAt() { return readAt; }
     public void setReadAt(LocalDateTime readAt) { this.readAt = readAt; }
 }

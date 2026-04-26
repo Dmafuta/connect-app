@@ -21,4 +21,5 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     List<Alert> findByResolvedFalseOrderByCreatedAtDesc();
     List<Alert> findByMeterIdOrderByCreatedAtDesc(Long meterId);
     long countByResolvedFalse();
+    long countByResolvedTrue();
 }

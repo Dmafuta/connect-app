@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, MoreHorizontal, Plus } from "lucide-react";
+import { Building2, MoreHorizontal, Plus, UserPlus } from "lucide-react";
 import Pagination, { PageResponse } from "@/components/dashboard/Pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,12 @@ export default function Tenants() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [pageNum, setPageNum] = useState(0);
+
+  // Invite admin dialog
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteTenant, setInviteTenant] = useState<Tenant | null>(null);
+  const [inviteForm, setInviteForm] = useState({ email: "", firstName: "", lastName: "" });
+  const [inviting, setInviting] = useState(false);
 
   const load = (p = 0) => {
     setLoading(true);
@@ -65,6 +71,27 @@ export default function Tenants() {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setCreating(false);
+    }
+  };
+
+  const openInvite = (tenant: Tenant) => {
+    setInviteTenant(tenant);
+    setInviteForm({ email: "", firstName: "", lastName: "" });
+    setInviteOpen(true);
+  };
+
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteTenant) return;
+    setInviting(true);
+    try {
+      await api.post(`/api/tenants/${inviteTenant.id}/invite-admin`, inviteForm);
+      toast({ title: "Invite sent", description: `Admin invite sent to ${inviteForm.email}` });
+      setInviteOpen(false);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -134,7 +161,10 @@ export default function Tenants() {
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="rounded-none w-40">
+                <DropdownMenuContent align="end" className="rounded-none w-44">
+                  <DropdownMenuItem onClick={() => openInvite(t)} className="text-xs gap-2">
+                    <UserPlus className="h-3.5 w-3.5" /> Invite admin
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => toggleActive(t)} className="text-xs">
                     {t.active ? "Deactivate" : "Activate"} tenant
                   </DropdownMenuItem>
@@ -147,6 +177,66 @@ export default function Tenants() {
 
       {page && <Pagination meta={page} onPageChange={p => setPageNum(p)} />}
       <p className="text-xs text-muted-foreground">{page?.totalElements ?? 0} tenant{(page?.totalElements ?? 0) !== 1 ? "s" : ""} total</p>
+
+      {/* Invite Admin Dialog */}
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent className="rounded-none sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg font-semibold tracking-tight">
+              Invite Admin — {inviteTenant?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-[12px] text-muted-foreground -mt-2">
+            An account will be created and a set-password link emailed to them.
+            Org code: <span className="font-mono font-semibold text-foreground">{inviteTenant?.code}</span>
+          </p>
+          <form onSubmit={handleInvite} className="space-y-4 pt-1">
+            <div className="space-y-2">
+              <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">Email</Label>
+              <Input
+                type="email"
+                value={inviteForm.email}
+                onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))}
+                placeholder="admin@example.com"
+                required
+                className="h-11 rounded-none border-0 border-b border-border bg-transparent px-0 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">First name</Label>
+                <Input
+                  value={inviteForm.firstName}
+                  onChange={e => setInviteForm(f => ({ ...f, firstName: e.target.value }))}
+                  placeholder="Jane"
+                  className="h-11 rounded-none border-0 border-b border-border bg-transparent px-0 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">Last name</Label>
+                <Input
+                  value={inviteForm.lastName}
+                  onChange={e => setInviteForm(f => ({ ...f, lastName: e.target.value }))}
+                  placeholder="Doe"
+                  className="h-11 rounded-none border-0 border-b border-border bg-transparent px-0 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+              </div>
+            </div>
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="ghost" onClick={() => setInviteOpen(false)} className="rounded-none text-xs">
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={inviting}
+                className="rounded-none bg-brand-black font-display text-xs font-semibold uppercase tracking-[0.15em] hover:bg-brand-red"
+              >
+                {inviting ? "Sending…" : "Send invite →"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Create Tenant Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>

@@ -81,10 +81,10 @@ export default function SuperAdminOverview() {
 
       {/* KPI row */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Users"   value={stats.userCount}     sub={`${stats.customerCount} customers`}  accent="text-brand-red"   trend="up" trendValue={`${stats.adminCount} admins, ${stats.technicianCount} techs`} icon={Users} />
-        <StatCard label="Active Meters" value={stats.activeMeters}  sub={`of ${stats.totalMeters} total`}     accent="text-blue-600"    trend="up" trendValue="All utilities" icon={Gauge} />
-        <StatCard label="Open Alerts"   value={stats.openAlerts}    sub="requiring attention"                 accent={stats.openAlerts > 0 ? "text-rose-600" : "text-emerald-600"} trend={stats.openAlerts > 0 ? "down" : "flat"} icon={AlertTriangle} />
-        <StatCard label="Transactions"  value={transactions.length} sub="total payments"                      accent="text-emerald-600" trend="up" trendValue="Mpesa payments" icon={CreditCard} />
+        <StatCard label="Tenants"       value={stats.tenantCount ?? 0} sub="active organisations"         accent="text-brand-red"   trend="up" trendValue="Platform wide" icon={Users} />
+        <StatCard label="Platform Users" value={stats.userCount}       sub="across all tenants"           accent="text-blue-600"    trend="up" trendValue={`${stats.adminCount ?? 0} admins`} icon={Gauge} />
+        <StatCard label="Open Alerts"   value={stats.openAlerts}       sub="requiring attention"          accent={stats.openAlerts > 0 ? "text-rose-600" : "text-emerald-600"} trend={stats.openAlerts > 0 ? "down" : "flat"} icon={AlertTriangle} />
+        <StatCard label="Total Meters"  value={stats.totalMeters}      sub="across platform"              accent="text-emerald-600" trend="up" trendValue="All utilities" icon={CreditCard} />
       </div>
 
       {/* Analytics */}

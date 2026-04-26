@@ -65,8 +65,19 @@ public class AuthController {
         if (userRepository.existsByEmailAndTenant(request.email(), tenant)) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Email already registered"));
         }
+        String username = request.username();
+        if (username == null || username.isBlank()) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Username is required"));
+        }
+        if (!username.matches("^[a-zA-Z0-9._-]{3,30}$")) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Username must be 3–30 characters: letters, numbers, dots, underscores, hyphens only"));
+        }
+        if (userRepository.existsByUsernameAndTenant(username, tenant)) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Username already taken"));
+        }
         User user = new User();
         user.setEmail(request.email());
+        user.setUsername(username);
         user.setPassword(passwordEncoder.encode(request.password()));
         if (request.firstName() != null) user.setFirstName(request.firstName());
         if (request.lastName()  != null) user.setLastName(request.lastName());
@@ -164,14 +175,26 @@ public class AuthController {
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
         String tenantCode = body.get("tenantCode");
         String email      = body.get("email");
-        if (tenantCode != null && email != null) {
+        if (email == null) {
+            return ResponseEntity.ok(Map.of("message",
+                    "If that account exists, a password reset link has been sent to your email."));
+        }
+
+        if (tenantCode == null || tenantCode.isBlank()) {
+            // Platform login — SUPER_ADMIN only
+            userRepository.findByEmailAndTenantIsNull(email).ifPresent(user -> {
+                if (user.getRole() == Role.SUPER_ADMIN) {
+                    try { otpService.sendPasswordResetLink(email, "PLATFORM", appUrl); }
+                    catch (Exception ignored) {}
+                }
+            });
+        } else {
             tenantRepository.findByCode(tenantCode)
                     .filter(Tenant::isActive)
                     .ifPresent(tenant ->
                         userRepository.findByEmailAndTenant(email, tenant).ifPresent(user -> {
-                            try {
-                                otpService.sendPasswordResetLink(email, tenantCode, appUrl);
-                            } catch (Exception ignored) {}
+                            try { otpService.sendPasswordResetLink(email, tenantCode, appUrl); }
+                            catch (Exception ignored) {}
                         })
                     );
         }
@@ -187,47 +210,85 @@ public class AuthController {
         String tenantCode  = body.get("tenantCode");
         String newPassword = body.get("newPassword");
 
-        if (token == null || email == null || tenantCode == null || newPassword == null) {
+        if (token == null || email == null || newPassword == null) {
             return ResponseEntity.badRequest().body(new ErrorResponse("All fields are required"));
         }
         if (newPassword.length() < 6) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Password must be at least 6 characters"));
         }
+        if (tenantCode == null) tenantCode = "";
 
         String key = email + ":" + tenantCode;
         if (!otpService.verifyOtp(key, "PASSWORD_RESET_LINK", token)) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Reset link is invalid or has expired."));
         }
 
+        // Platform reset (SUPER_ADMIN)
+        if (tenantCode.isBlank() || "PLATFORM".equals(tenantCode)) {
+            User user = userRepository.findByEmailAndTenantIsNull(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of("message", "Password reset successfully. You can now sign in."));
+        }
+
         Tenant tenant = tenantRepository.findByCode(tenantCode).orElse(null);
         if (tenant == null) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Invalid organisation code"));
         }
-
         User user = userRepository.findByEmailAndTenant(email, tenant)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-
         return ResponseEntity.ok(Map.of("message", "Password reset successfully. You can now sign in."));
     }
 
     /**
      * Login — step 1: validate credentials, send OTP, return OTP_REQUIRED.
+     * If tenantCode is blank, this is a platform login (SUPER_ADMIN only).
      * Step 2: POST /api/auth/verify-login-otp to exchange OTP for JWT.
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        Tenant tenant = tenantRepository.findByCode(request.tenantCode())
-                .orElse(null);
+        // Platform login — no tenantCode → SUPER_ADMIN only (always by email)
+        if (request.tenantCode() == null || request.tenantCode().isBlank()) {
+            try {
+                authManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(request.identifier(), request.password()));
+            } catch (BadCredentialsException e) {
+                return ResponseEntity.status(401).body(new ErrorResponse("Invalid email or password"));
+            }
+            User user = userRepository.findByEmailAndTenantIsNull(request.identifier()).orElse(null);
+            if (user == null || user.getRole() != Role.SUPER_ADMIN) {
+                return ResponseEntity.status(401).body(new ErrorResponse("Invalid email or password"));
+            }
+            try { otpService.sendOtpToBoth(user.getEmail(), user.getPhone(), "LOGIN_OTP"); }
+            catch (Exception ignored) {}
+            return ResponseEntity.ok(Map.of(
+                    "status", "OTP_REQUIRED",
+                    "email",  user.getEmail(),
+                    "message", "A verification code has been sent to your email."
+            ));
+        }
+
+        // Tenant login — identifier may be email or username
+        Tenant tenant = tenantRepository.findByCode(request.tenantCode()).orElse(null);
         if (tenant == null || !tenant.isActive()) {
             return ResponseEntity.status(401).body(new ErrorResponse("Invalid or inactive organisation code"));
+        }
+
+        // Resolve identifier → user (try email first, then username)
+        User user = userRepository.findByEmailAndTenant(request.identifier(), tenant)
+                .or(() -> userRepository.findByUsernameAndTenant(request.identifier(), tenant))
+                .orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(401).body(new ErrorResponse("Invalid credentials"));
         }
 
         TenantContext.set(tenant.getId());
         try {
             authManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
+                    new UsernamePasswordAuthenticationToken(user.getEmail(), request.password())
             );
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(401).body(new ErrorResponse("Invalid email or password"));
@@ -235,19 +296,13 @@ public class AuthController {
             TenantContext.clear();
         }
 
-        User user = userRepository.findByEmailAndTenant(request.email(), tenant).orElseThrow();
         if (!user.isEmailVerified()) {
             return ResponseEntity.status(403).body(new ErrorResponse(
                 "Please verify your email before signing in. Check your inbox for the verification link."));
         }
 
-        // Send OTP — email always, SMS if phone is registered
-        try {
-            otpService.sendOtpToBoth(user.getEmail(), user.getPhone(), "LOGIN_OTP");
-        } catch (Exception e) {
-            // If OTP delivery fails, still proceed so as not to lock users out;
-            // log in production
-        }
+        try { otpService.sendOtpToBoth(user.getEmail(), user.getPhone(), "LOGIN_OTP"); }
+        catch (Exception ignored) {}
 
         return ResponseEntity.ok(Map.of(
                 "status", "OTP_REQUIRED",
@@ -263,14 +318,26 @@ public class AuthController {
         String code       = body.get("code");
         String tenantCode = body.get("tenantCode");
 
-        if (email == null || code == null || tenantCode == null) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("email, code and tenantCode are required"));
+        if (email == null || code == null) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("email and code are required"));
         }
 
         if (!otpService.verifyOtp(email, "LOGIN_OTP", code)) {
             return ResponseEntity.status(401).body(new ErrorResponse("Invalid or expired verification code"));
         }
 
+        // Platform login (SUPER_ADMIN)
+        if (tenantCode == null || tenantCode.isBlank()) {
+            User user = userRepository.findByEmailAndTenantIsNull(email).orElse(null);
+            if (user == null || user.getRole() != Role.SUPER_ADMIN) {
+                return ResponseEntity.status(401).body(new ErrorResponse("Unauthorized"));
+            }
+            String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), null);
+            return ResponseEntity.ok(new AuthResponse(
+                    token, user.getEmail(), user.getRole().name(), user.getFullName(), "", ""));
+        }
+
+        // Tenant login
         Tenant tenant = tenantRepository.findByCode(tenantCode)
                 .orElseThrow(() -> new RuntimeException("Tenant not found"));
         User user = userRepository.findByEmailAndTenant(email, tenant).orElseThrow();

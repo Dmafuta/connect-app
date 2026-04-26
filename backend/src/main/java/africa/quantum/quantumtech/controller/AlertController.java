@@ -63,13 +63,13 @@ public class AlertController {
     }
 
     @GetMapping("/stream")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN','TECHNICIAN')")
     public SseEmitter stream() {
         return alertEventService.subscribe(TenantContext.get());
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN','TECHNICIAN')")
     public Page<Alert> activeAlerts(
             @RequestParam(defaultValue = "0")     int page,
             @RequestParam(defaultValue = "20")    int size,
@@ -82,13 +82,13 @@ public class AlertController {
     }
 
     @GetMapping("/meter/{meterId}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN','TECHNICIAN')")
     public List<Alert> byMeter(@PathVariable Long meterId) {
         return alertRepository.findByMeterIdAndMeterTenantIdOrderByCreatedAtDesc(meterId, TenantContext.get());
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN','TECHNICIAN')")
     public ResponseEntity<?> createAlert(@RequestBody Map<String, String> body,
                                          @RequestHeader("Authorization") String authHeader,
                                          HttpServletRequest request) {
@@ -130,7 +130,7 @@ public class AlertController {
     }
 
     @PatchMapping("/{id}/resolve")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN','TECHNICIAN')")
     public ResponseEntity<Alert> resolve(@PathVariable Long id,
                                          @RequestHeader("Authorization") String authHeader,
                                          HttpServletRequest request) {

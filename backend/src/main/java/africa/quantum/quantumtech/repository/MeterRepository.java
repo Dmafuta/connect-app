@@ -30,6 +30,10 @@ public interface MeterRepository extends JpaRepository<Meter, Long> {
     long countByTenantIdAndStatus(Long tenantId, Meter.Status status);
     long countByTenantIdAndType(Long tenantId, Meter.Type type);
 
+    // Platform-wide (no tenant filter)
+    long countByStatus(Meter.Status status);
+    long countByType(Meter.Type type);
+
     // Legacy — kept for DataInitializer / internal use only
     List<Meter> findByCustomer(User customer);
     List<Meter> findByCustomerId(Long customerId);

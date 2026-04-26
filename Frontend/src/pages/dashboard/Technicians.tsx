@@ -16,7 +16,14 @@ export default function Technicians() {
   const [search, setSearch]           = useState("");
   const [open, setOpen]               = useState(false);
   const [saving, setSaving]           = useState(false);
-  const [form, setForm]               = useState({ firstName: "", lastName: "", email: "", phone: "", password: "ChangeMe123!" });
+  const [form, setForm]               = useState({ firstName: "", lastName: "", email: "", phone: "", password: "ChangeMe123!", username: "" });
+  const [formUsernameEdited, setFormUsernameEdited] = useState(false);
+
+  const suggestUsername = (first: string, last: string) => {
+    if (formUsernameEdited) return;
+    const raw = `${first.trim()}.${last.trim()}`.toLowerCase().replace(/[^a-z0-9._-]/g, "").replace(/\.+/g, ".").replace(/^\./, "");
+    setForm(f => ({ ...f, username: raw.substring(0, 30) }));
+  };
 
   const load = () => {
     setLoading(true);
@@ -34,7 +41,8 @@ export default function Technicians() {
       await api.post("/api/users", { ...form, role: "TECHNICIAN" });
       toast({ title: "Technician created", description: `${form.firstName} ${form.lastName} added.` });
       setOpen(false);
-      setForm({ firstName: "", lastName: "", email: "", phone: "", password: "ChangeMe123!" });
+      setForm({ firstName: "", lastName: "", email: "", phone: "", password: "ChangeMe123!", username: "" });
+      setFormUsernameEdited(false);
       load();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -42,7 +50,7 @@ export default function Technicians() {
   };
 
   const filtered = technicians.filter(t =>
-    `${t.firstName} ${t.lastName} ${t.email}`.toLowerCase().includes(search.toLowerCase())
+    `${t.firstName} ${t.lastName} ${t.email} ${t.username ?? ""}`.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -64,12 +72,16 @@ export default function Technicians() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">First name</Label>
-                  <Input value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} required placeholder="John" className="rounded-none" />
+                  <Input value={form.firstName} onChange={e => { setForm(f => ({ ...f, firstName: e.target.value })); suggestUsername(e.target.value, form.lastName); }} required placeholder="John" className="rounded-none" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Last name</Label>
-                  <Input value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} placeholder="Doe" className="rounded-none" />
+                  <Input value={form.lastName} onChange={e => { setForm(f => ({ ...f, lastName: e.target.value })); suggestUsername(form.firstName, e.target.value); }} placeholder="Doe" className="rounded-none" />
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Username</Label>
+                <Input value={form.username} onChange={e => { setForm(f => ({ ...f, username: e.target.value })); setFormUsernameEdited(true); }} required placeholder="john.doe" minLength={3} maxLength={30} pattern="^[a-zA-Z0-9._-]{3,30}$" title="3–30 characters: letters, numbers, dots, underscores, hyphens" className="rounded-none" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Email</Label>
@@ -101,6 +113,7 @@ export default function Technicians() {
           <TableHeader>
             <TableRow className="bg-muted hover:bg-muted">
               <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Name</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Username</TableHead>
               <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Email</TableHead>
               <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Phone</TableHead>
               <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-24">Status</TableHead>
@@ -108,10 +121,10 @@ export default function Technicians() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={4} className="h-32 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="h-32 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="h-48 p-0">
+                <TableCell colSpan={5} className="h-48 p-0">
                   <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
                     <Wrench className="h-10 w-10 opacity-20" />
                     <div className="text-center">
@@ -140,6 +153,7 @@ export default function Technicians() {
               filtered.map(t => (
                 <TableRow key={t.id}>
                   <TableCell className="font-medium">{t.firstName} {t.lastName}</TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{t.username ? `@${t.username}` : "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{t.email}</TableCell>
                   <TableCell className="text-muted-foreground">{t.phone ?? "—"}</TableCell>
                   <TableCell className={`text-[10px] font-semibold uppercase ${t.active ? "text-emerald-600" : "text-rose-600"}`}>

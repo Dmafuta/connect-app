@@ -15,3 +15,8 @@ Thumbs.db
 
 # Scripts output
 scripts/*.log
+
+# Runtime logs
+*.log
+backend/log
+run.log

@@ -12,17 +12,28 @@ type Mode = "login" | "register" | "verify-phone" | "forgot-password" | "verify-
 
 const Auth = () => {
   const [mode, setMode] = useState<Mode>("login");
+  const [isPlatformLogin, setIsPlatformLogin] = useState(false);
   const [tenantCode, setTenantCode] = useState("");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // email or username for login
+  const [email, setEmail] = useState("");            // email only for register/forgot/otp
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameEdited, setUsernameEdited] = useState(false);
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { login } = useAuth();
+
+  // Auto-suggest username from first + last name (only if user hasn't manually edited it)
+  const suggestUsername = (first: string, last: string) => {
+    if (usernameEdited) return;
+    const raw = `${first.trim()}.${last.trim()}`.toLowerCase().replace(/[^a-z0-9._-]/g, "").replace(/\.+/g, ".").replace(/^\./, "");
+    setUsername(raw.substring(0, 30));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +43,7 @@ const Auth = () => {
         const res = await fetch(`${API}/forgot-password`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tenantCode, email }),
+          body: JSON.stringify({ tenantCode: isPlatformLogin ? "" : tenantCode, email }),
         });
         const data = await res.json();
         toast({ title: "Check your email", description: data.message });
@@ -57,7 +68,7 @@ const Auth = () => {
         const res = await fetch(`${API}/verify-login-otp`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, code: otp, tenantCode }),
+          body: JSON.stringify({ email, code: otp, tenantCode: isPlatformLogin ? "" : tenantCode }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Verification failed");
@@ -75,8 +86,8 @@ const Auth = () => {
 
       const endpoint = mode === "login" ? `${API}/login` : `${API}/register`;
       const reqBody = mode === "login"
-        ? { tenantCode, email, password }
-        : { tenantCode, email, password, firstName, lastName, phone };
+        ? { tenantCode: isPlatformLogin ? "" : tenantCode, identifier, password }
+        : { tenantCode, email, password, firstName, lastName, phone, username };
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -97,6 +108,7 @@ const Auth = () => {
 
       // Login step 1 succeeded — OTP was sent
       if (data.status === "OTP_REQUIRED") {
+        if (data.email) setEmail(data.email); // capture real email for OTP step
         toast({ title: "Check your email", description: data.message });
         setMode("verify-login-otp");
         return;
@@ -185,11 +197,15 @@ const Auth = () => {
           </h1>
           <p className="mt-3 text-sm text-muted-foreground">
             {mode === "login"
-              ? "Enter your organisation code and credentials to continue."
+              ? isPlatformLogin
+                ? "Platform access — enter your credentials to continue."
+                : "Enter your organisation code and credentials to continue."
               : mode === "register"
               ? "Register a new account to get started."
               : mode === "forgot-password"
-              ? "Enter your organisation code and email. We'll send you a reset link."
+              ? isPlatformLogin
+                ? "Enter your email. We'll send you a reset link."
+                : "Enter your organisation code and email. We'll send you a reset link."
               : mode === "verify-login-otp"
               ? `Enter the 6-digit code sent to ${email}.`
               : `Enter the OTP sent to ${phone}. Also check your email for a verification link.`}
@@ -198,22 +214,24 @@ const Auth = () => {
           <form onSubmit={handleSubmit} className="mt-10 space-y-5">
             {mode === "forgot-password" ? (
               <>
-                <div className="space-y-2">
-                  <Label htmlFor="tenantCode" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">
-                    Organisation code
-                  </Label>
-                  <Input
-                    id="tenantCode"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="e.g. 432910"
-                    value={tenantCode}
-                    onChange={e => setTenantCode(e.target.value.replace(/\D/g, ""))}
-                    required
-                    className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
-                  />
-                </div>
+                {!isPlatformLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="tenantCode" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">
+                      Organisation code
+                    </Label>
+                    <Input
+                      id="tenantCode"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="e.g. 432910"
+                      value={tenantCode}
+                      onChange={e => setTenantCode(e.target.value.replace(/\D/g, ""))}
+                      required
+                      className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">Email</Label>
                   <Input id="email" type="email" placeholder="you@example.com" value={email}
@@ -235,33 +253,35 @@ const Auth = () => {
               </div>
             ) : (
               <>
-                <div className="space-y-2">
-                  <Label htmlFor="tenantCode" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">
-                    Organisation code
-                  </Label>
-                  <Input
-                    id="tenantCode"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="e.g. 432910"
-                    value={tenantCode}
-                    onChange={e => setTenantCode(e.target.value.replace(/\D/g, ""))}
-                    required
-                    className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
-                  />
-                </div>
+                {!isPlatformLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="tenantCode" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">
+                      Organisation code
+                    </Label>
+                    <Input
+                      id="tenantCode"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="e.g. 432910"
+                      value={tenantCode}
+                      onChange={e => setTenantCode(e.target.value.replace(/\D/g, ""))}
+                      required
+                      className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  </div>
+                )}
                 {mode === "register" && (
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">First name</Label>
-                        <Input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Jane" required
+                        <Input value={firstName} onChange={e => { setFirstName(e.target.value); suggestUsername(e.target.value, lastName); }} placeholder="Jane" required
                           className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0" />
                       </div>
                       <div className="space-y-2">
                         <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">Last name</Label>
-                        <Input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Doe"
+                        <Input value={lastName} onChange={e => { setLastName(e.target.value); suggestUsername(firstName, e.target.value); }} placeholder="Doe"
                           className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0" />
                       </div>
                     </div>
@@ -275,12 +295,34 @@ const Auth = () => {
                   </>
                 )}
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">Email</Label>
-                  <Input id="email" type="email" placeholder="you@example.com" value={email}
-                    onChange={e => setEmail(e.target.value)} required
-                    className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
-                  />
+                  <Label htmlFor="emailOrId" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">
+                    {mode === "login" ? "Email or username" : "Email"}
+                  </Label>
+                  {mode === "login" ? (
+                    <Input id="emailOrId" type="text" placeholder="you@example.com or your_username" value={identifier}
+                      onChange={e => setIdentifier(e.target.value)} required
+                      className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  ) : (
+                    <Input id="emailOrId" type="email" placeholder="you@example.com" value={email}
+                      onChange={e => setEmail(e.target.value)} required
+                      className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 text-foreground placeholder:text-muted-foreground/60 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  )}
                 </div>
+                {mode === "register" && (
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">
+                      Username <span className="normal-case text-muted-foreground">(letters, numbers, . _ -)</span>
+                    </Label>
+                    <Input value={username}
+                      onChange={e => { setUsername(e.target.value); setUsernameEdited(true); }}
+                      placeholder="jane.doe" required minLength={3} maxLength={30}
+                      pattern="^[a-zA-Z0-9._-]{3,30}$"
+                      title="3–30 characters: letters, numbers, dots, underscores, hyphens"
+                      className="h-12 rounded-none border-0 border-b border-border bg-transparent px-0 focus-visible:border-brand-red focus-visible:ring-0 focus-visible:ring-offset-0" />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/70">Password</Label>
                   <Input id="password" type="password" placeholder="••••••••••" value={password}
@@ -322,6 +364,30 @@ const Auth = () => {
                 {" · "}
                 Don't have an account?{" "}
                 <button onClick={() => setMode("register")} className="underline hover:text-foreground">Register</button>
+                <br className="mt-4" />
+                <span className="mt-4 inline-block">
+                  {isPlatformLogin ? (
+                    <>
+                      Tenant login?{" "}
+                      <button
+                        onClick={() => setIsPlatformLogin(false)}
+                        className="underline hover:text-foreground"
+                      >
+                        Use organisation code
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      Quantum staff?{" "}
+                      <button
+                        onClick={() => { setIsPlatformLogin(true); setTenantCode(""); }}
+                        className="underline hover:text-foreground"
+                      >
+                        Platform access
+                      </button>
+                    </>
+                  )}
+                </span>
               </>
             ) : (
               <>

@@ -28,12 +28,33 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        Tenant defaultTenant = seedTenant("QuantumConnect", "quantumconnect");
+        // SUPER_ADMIN is a platform-level account — no tenant
+        seedSuperAdmin("superadmin@quantum.local", "Admin@123", "Super", "Admin");
 
-        seed("superadmin@quantum.local", "Admin@123",    "Super",    "Admin",    Role.SUPER_ADMIN, defaultTenant);
-        seed("admin@quantum.local",      "Admin@123",    "Admin",    "User",     Role.ADMIN,       defaultTenant);
-        seed("tech@quantum.local",       "Tech@123",     "Tech",     "User",     Role.TECHNICIAN,  defaultTenant);
-        seed("customer@quantum.local",   "Customer@123", "Customer", "User",     Role.CUSTOMER,    defaultTenant);
+        // Demo tenant with tenant-scoped users
+        Tenant defaultTenant = seedTenant("QuantumConnect", "quantumconnect");
+        seed("admin@quantum.local",      "Admin@123",    "Admin",    "User",     Role.ADMIN,       defaultTenant, "admin");
+        seed("tech@quantum.local",       "Tech@123",     "Tech",     "User",     Role.TECHNICIAN,  defaultTenant, "tech.user");
+        seed("customer@quantum.local",   "Customer@123", "Customer", "User",     Role.CUSTOMER,    defaultTenant, "customer.user");
+        // Backfill usernames for any existing users that were seeded before the username feature
+        backfillUsernames(defaultTenant);
+    }
+
+    private void seedSuperAdmin(String email, String password, String firstName, String lastName) {
+        // Migrate: if SUPER_ADMIN was previously seeded with a tenant, detach to platform-level
+        userRepository.detachSuperAdminFromTenant(email);
+        if (userRepository.existsByEmailAndTenantIsNull(email)) return;
+        User u = new User();
+        u.setEmail(email);
+        u.setPassword(passwordEncoder.encode(password));
+        u.setFirstName(firstName);
+        u.setLastName(lastName);
+        u.setRole(Role.SUPER_ADMIN);
+        u.setEmailVerified(true);
+        u.setPhoneVerified(true);
+        u.setTenant(null);
+        userRepository.save(u);
+        System.out.printf("[DataInitializer] Created SUPER_ADMIN (%s) — platform-level (no tenant)%n", email);
     }
 
     private Tenant seedTenant(String name, String slug) {
@@ -56,10 +77,11 @@ public class DataInitializer implements CommandLineRunner {
         return code;
     }
 
-    private void seed(String email, String password, String firstName, String lastName, Role role, Tenant tenant) {
+    private void seed(String email, String password, String firstName, String lastName, Role role, Tenant tenant, String username) {
         if (userRepository.existsByEmailAndTenant(email, tenant)) return;
         User u = new User();
         u.setEmail(email);
+        u.setUsername(username);
         u.setPassword(passwordEncoder.encode(password));
         u.setFirstName(firstName);
         u.setLastName(lastName);
@@ -69,5 +91,25 @@ public class DataInitializer implements CommandLineRunner {
         u.setTenant(tenant);
         userRepository.save(u);
         System.out.printf("[DataInitializer] Created %s (%s) in tenant '%s'%n", email, role, tenant.getSlug());
+    }
+
+    /** Assign usernames to existing users that pre-date the username feature. */
+    private void backfillUsernames(Tenant tenant) {
+        userRepository.findAllByTenant(tenant).forEach(u -> {
+            if (u.getUsername() != null && !u.getUsername().isBlank()) return;
+            // Derive a base username from email local-part, sanitized
+            String base = u.getEmail().split("@")[0].replaceAll("[^a-zA-Z0-9._-]", ".").toLowerCase();
+            if (base.length() < 3) base = base + "_usr";
+            if (base.length() > 30) base = base.substring(0, 30);
+            String candidate = base;
+            int suffix = 2;
+            while (userRepository.existsByUsernameAndTenant(candidate, tenant)) {
+                candidate = base.substring(0, Math.min(base.length(), 27)) + suffix;
+                suffix++;
+            }
+            u.setUsername(candidate);
+            userRepository.save(u);
+            System.out.printf("[DataInitializer] Backfilled username '%s' for %s%n", candidate, u.getEmail());
+        });
     }
 }

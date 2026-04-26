@@ -13,6 +13,7 @@ public class Meter {
 
     public enum Type   { WATER, ELECTRICITY, GAS }
     public enum Status { ACTIVE, INACTIVE, FAULTY }
+    public enum Mode   { SMART, POSTPAID }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,6 +29,10 @@ public class Meter {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status = Status.ACTIVE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Mode mode = Mode.POSTPAID;
 
     private String location;
 
@@ -58,6 +63,8 @@ public class Meter {
     public void setType(Type type) { this.type = type; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
+    public Mode getMode() { return mode; }
+    public void setMode(Mode mode) { this.mode = mode; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
     public User getCustomer() { return customer; }

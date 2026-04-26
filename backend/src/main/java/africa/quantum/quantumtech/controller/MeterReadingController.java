@@ -13,6 +13,7 @@ import africa.quantum.quantumtech.repository.UserRepository;
 import africa.quantum.quantumtech.security.JwtUtil;
 import africa.quantum.quantumtech.security.TenantContext;
 import africa.quantum.quantumtech.service.AuditService;
+import africa.quantum.quantumtech.service.BillingService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,6 +35,7 @@ public class MeterReadingController {
     private final JwtUtil                jwtUtil;
     private final AuditService           auditService;
     private final EmailService           emailService;
+    private final BillingService         billingService;
 
     public MeterReadingController(MeterReadingRepository readingRepository,
                                   MeterRepository meterRepository,
@@ -41,7 +43,8 @@ public class MeterReadingController {
                                   TenantRepository tenantRepository,
                                   JwtUtil jwtUtil,
                                   AuditService auditService,
-                                  EmailService emailService) {
+                                  EmailService emailService,
+                                  BillingService billingService) {
         this.readingRepository = readingRepository;
         this.meterRepository   = meterRepository;
         this.userRepository    = userRepository;
@@ -49,6 +52,7 @@ public class MeterReadingController {
         this.jwtUtil           = jwtUtil;
         this.auditService      = auditService;
         this.emailService      = emailService;
+        this.billingService    = billingService;
     }
 
     private Tenant currentTenant() {
@@ -57,7 +61,7 @@ public class MeterReadingController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN','TECHNICIAN')")
     public Page<MeterReading> allReadings(
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -66,7 +70,7 @@ public class MeterReadingController {
     }
 
     @GetMapping("/meter/{meterId}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN','TECHNICIAN')")
     public List<MeterReading> byMeter(@PathVariable Long meterId) {
         return readingRepository.findByMeterIdAndMeterTenantIdOrderByReadAtDesc(meterId, TenantContext.get());
     }
@@ -79,7 +83,7 @@ public class MeterReadingController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN','TECHNICIAN')")
     public ResponseEntity<?> logReading(@RequestHeader("Authorization") String authHeader,
                                         @RequestBody Map<String, String> body,
                                         HttpServletRequest request) {
@@ -91,26 +95,32 @@ public class MeterReadingController {
         User   recorder = userRepository.findByEmailAndTenant(email, currentTenant()).orElseThrow();
 
         double newValue = Double.parseDouble(body.get("value"));
-        double previousValue = readingRepository
-                .findFirstByMeterIdAndMeterTenantIdOrderByReadAtDesc(meterId, TenantContext.get())
-                .map(prev -> {
-                    if (newValue < prev.getValue()) {
-                        throw new IllegalArgumentException(
-                                "Reading value " + newValue + " is less than the previous reading "
-                                + prev.getValue() + " for this meter.");
-                    }
-                    return prev.getValue();
-                })
-                .orElse(0.0);
+        var prevReading = readingRepository
+                .findFirstByMeterIdAndMeterTenantIdOrderByReadAtDesc(meterId, TenantContext.get());
+
+        if (prevReading.isPresent() && newValue < prevReading.get().getValue()) {
+            return ResponseEntity.badRequest().body(Map.of("message",
+                    "Reading value " + newValue + " is less than the previous reading "
+                    + prevReading.get().getValue() + " for this meter."));
+        }
+
+        double previousValue = prevReading.map(MeterReading::getValue).orElse(0.0);
+        boolean isFirstReading = prevReading.isEmpty();
 
         MeterReading reading = new MeterReading();
         reading.setMeter(meter);
         reading.setValue(newValue);
         reading.setUnit(body.getOrDefault("unit", ""));
+        reading.setNotes(body.get("notes"));
         reading.setReadingType(MeterReading.ReadingType.MANUAL);
         reading.setRecordedBy(recorder);
 
         MeterReading saved = readingRepository.save(reading);
+
+        // Auto-generate invoice for this consumption period
+        try {
+            billingService.generateInvoice(saved, previousValue, isFirstReading);
+        } catch (Exception ignored) {}
         auditService.log(TenantContext.get(), request, email, role,
                 AuditLog.Action.READING_LOGGED, "MeterReading", String.valueOf(saved.getId()),
                 "Logged reading " + saved.getValue() + " " + saved.getUnit()

@@ -14,6 +14,8 @@ public interface MpesaTransactionRepository extends JpaRepository<MpesaTransacti
 
     List<MpesaTransaction> findByUserIdAndTenantIdOrderByCreatedAtDesc(Long userId, Long tenantId);
 
+    List<MpesaTransaction> findByTenantIdOrderByCreatedAtDesc(Long tenantId);
+
     // Legacy — unscoped
     List<MpesaTransaction> findByUserIdOrderByCreatedAtDesc(Long userId);
 }

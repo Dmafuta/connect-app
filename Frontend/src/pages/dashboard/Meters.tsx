@@ -16,6 +16,7 @@ import Pagination, { PageResponse } from "@/components/dashboard/Pagination";
 const TYPE_ICON: Record<string, React.ElementType> = { WATER: Droplets, ELECTRICITY: Zap, GAS: Flame };
 const TYPE_COLOR: Record<string, string> = { WATER: "#3b82f6", ELECTRICITY: "#f59e0b", GAS: "#10b981" };
 const STATUS_CLS: Record<string, string> = { ACTIVE: "bg-emerald-100 text-emerald-700", INACTIVE: "bg-slate-100 text-slate-600", FAULTY: "bg-rose-100 text-rose-700" };
+const MODE_CLS: Record<string, string> = { SMART: "bg-violet-100 text-violet-700", POSTPAID: "bg-slate-100 text-slate-600" };
 
 export default function Meters() {
   const api = useApi();
@@ -29,7 +30,7 @@ export default function Meters() {
   const [saving, setSaving] = useState(false);
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [pageNum, setPageNum] = useState(0);
-  const [form, setForm]       = useState({ serialNumber: "", type: "WATER", location: "", customerId: "", technicianId: "" });
+  const [form, setForm]       = useState({ serialNumber: "", type: "WATER", mode: "POSTPAID", location: "", customerId: "", technicianId: "" });
   const [deleting, setDeleting] = useState<number | null>(null);
   const [assignTarget, setAssignTarget] = useState<any | null>(null);
   const [assignForm, setAssignForm] = useState({ customerId: "", technicianId: "" });
@@ -92,7 +93,7 @@ export default function Meters() {
       await api.post("/api/meters", form);
       toast({ title: "Meter registered", description: `${form.serialNumber} added.` });
       setOpen(false);
-      setForm({ serialNumber: "", type: "WATER", location: "", customerId: "", technicianId: "" });
+      setForm({ serialNumber: "", type: "WATER", mode: "POSTPAID", location: "", customerId: "", technicianId: "" });
       loadMeters(pageNum);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -157,6 +158,16 @@ export default function Meters() {
                 </Select>
               </div>
               <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Mode</Label>
+                <Select value={form.mode} onValueChange={v => setForm(f => ({...f, mode: v}))}>
+                  <SelectTrigger className="rounded-none"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="POSTPAID">Postpaid (manual readings)</SelectItem>
+                    <SelectItem value="SMART">Smart (automated / IoT)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Location</Label>
                 <Input value={form.location} onChange={e => setForm(f => ({...f, location: e.target.value}))} placeholder="Nairobi, Block A" className="rounded-none" />
               </div>
@@ -198,6 +209,7 @@ export default function Meters() {
               <TableHead className="w-10" />
               <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Serial</TableHead>
               <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Type / Location</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Mode</TableHead>
               <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Customer</TableHead>
               <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Technician</TableHead>
               <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-28">Status</TableHead>
@@ -206,10 +218,10 @@ export default function Meters() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={7} className="h-32 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="h-32 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center">
+                <TableCell colSpan={8} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
                     <Gauge className="h-8 w-8 opacity-30" />
                     {search ? "No meters match." : "No meters registered yet."}
@@ -227,6 +239,9 @@ export default function Meters() {
                     </TableCell>
                     <TableCell className="font-medium">{m.serialNumber}</TableCell>
                     <TableCell className="text-muted-foreground">{m.type} · {m.location ?? "—"}</TableCell>
+                    <TableCell>
+                      <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase ${MODE_CLS[m.mode] ?? ""}`}>{m.mode ?? "POSTPAID"}</span>
+                    </TableCell>
                     <TableCell className="text-muted-foreground">{m.customer ? `${m.customer.firstName} ${m.customer.lastName}` : "—"}</TableCell>
                     <TableCell className="text-muted-foreground">{m.technician ? `${m.technician.firstName} ${m.technician.lastName}` : "—"}</TableCell>
                     <TableCell>
@@ -247,7 +262,7 @@ export default function Meters() {
                           {m.status !== "ACTIVE"   && <DropdownMenuItem onClick={() => handleStatusChange(m, "ACTIVE")}   className="text-xs">Mark as Active</DropdownMenuItem>}
                           {m.status !== "FAULTY"   && <DropdownMenuItem onClick={() => handleStatusChange(m, "FAULTY")}   className="text-xs">Mark as Faulty</DropdownMenuItem>}
                           {m.status !== "INACTIVE" && <DropdownMenuItem onClick={() => handleStatusChange(m, "INACTIVE")} className="text-xs">Mark as Inactive</DropdownMenuItem>}
-                          {user?.role === "SUPER_ADMIN" && (
+                          {user?.role === "ADMIN" && (
                             <>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleDelete(m)} className="text-xs text-rose-600 focus:text-rose-600">

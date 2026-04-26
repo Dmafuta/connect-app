@@ -17,8 +17,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Tenant-scoped lookups (preferred for all authenticated operations)
     Optional<User> findByEmailAndTenant(String email, Tenant tenant);
     boolean existsByEmailAndTenant(String email, Tenant tenant);
+    Optional<User> findByUsernameAndTenant(String username, Tenant tenant);
+    boolean existsByUsernameAndTenant(String username, Tenant tenant);
     List<User> findAllByTenant(Tenant tenant);
     Page<User> findAllByTenant(Tenant tenant, Pageable pageable);
+    Page<User> findAllByTenantAndRoleNot(Tenant tenant, Role role, Pageable pageable);
     List<User> findAllByTenantAndRole(Tenant tenant, Role role);
     Page<User> findAllByTenantAndRole(Tenant tenant, Role role, Pageable pageable);
 
@@ -30,6 +33,20 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     Optional<User> findByPhone(String phone);
     boolean existsByEmail(String email);
+
+    // Platform-level lookups for SUPER_ADMIN (tenant IS NULL)
+    Optional<User> findByEmailAndTenantIsNull(String email);
+    boolean existsByEmailAndTenantIsNull(String email);
+
+    /** Migration helper: detaches an existing SUPER_ADMIN from any tenant (run on startup). */
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE users SET tenant_id = NULL WHERE email = :email AND role = 'SUPER_ADMIN' AND tenant_id IS NOT NULL", nativeQuery = true)
+    void detachSuperAdminFromTenant(@Param("email") String email);
+
+    // Platform-wide counts (no tenant filter)
+    long countByRole(africa.quantum.quantumtech.model.Role role);
+    long countByActive(boolean active);
 
     @Query(value = "SELECT * FROM users WHERE tenant_id = :tenantId AND deleted_at IS NOT NULL ORDER BY deleted_at DESC", nativeQuery = true)
     List<User> findAllDeletedByTenantId(@Param("tenantId") Long tenantId);

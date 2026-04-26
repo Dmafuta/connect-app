@@ -64,6 +64,7 @@ public class SecurityConfig {
                     "/api/auth/**",
                     "/api/notifications/otp/**",
                     "/api/mpesa/callback",
+                    "/api/mpesa/callback/**",
                     "/actuator/health",
                     "/swagger-ui/**",
                     "/swagger-ui.html",

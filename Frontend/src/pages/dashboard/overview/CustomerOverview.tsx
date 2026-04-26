@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import StatCard from "@/components/dashboard/StatCard";
 import { useAuth } from "@/context/AuthContext";
-import { Gauge, Activity, CreditCard, AlertTriangle, ArrowRight, CheckCircle2, Droplets, Zap, Flame } from "lucide-react";
+import { Gauge, Activity, CreditCard, Receipt, ArrowRight, CheckCircle2, Droplets, Zap, Flame } from "lucide-react";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -13,10 +13,11 @@ const TYPE_COLOR: Record<string, string> = { WATER: "#3b82f6", ELECTRICITY: "#f5
 export default function CustomerOverview() {
   const { user }  = useAuth();
   const api       = useApi();
-  const [meters,  setMeters]  = useState<any[]>([]);
-  const [readings,setReadings]= useState<any[]>([]);
-  const [txns,    setTxns]    = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [meters,   setMeters]   = useState<any[]>([]);
+  const [readings, setReadings] = useState<any[]>([]);
+  const [txns,     setTxns]     = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [loading,  setLoading]  = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -25,12 +26,18 @@ export default function CustomerOverview() {
       api.get<any>("/api/users/me")
         .then(me => api.get<any[]>(`/api/mpesa/transactions/user/${me.id}`).catch(() => []))
         .catch(() => []),
-    ]).then(([m, r, t]) => { setMeters(m); setReadings(r); setTxns(t as any[]); })
-      .finally(() => setLoading(false));
+      api.get<any>("/api/invoices/my?page=0&size=5").catch(() => null),
+    ]).then(([m, r, t, inv]) => {
+      setMeters(m);
+      setReadings(r);
+      setTxns(t as any[]);
+      setInvoices(inv?.content ?? []);
+    }).finally(() => setLoading(false));
   }, []);
 
-  const lastReading = readings[0];
-  const pendingBill = txns.find(t => t.status === "PENDING");
+  const lastReading  = readings[0];
+  const unpaidInvoices = invoices.filter((i: any) => i.status === "UNPAID");
+  const outstandingBalance = unpaidInvoices.reduce((s: number, i: any) => s + Number(i.amount), 0);
 
   const chartData = readings.slice(0, 14).reverse().map((r: any, i: number) => ({
     name: `${i+1}`, v: r.value,
@@ -60,8 +67,12 @@ export default function CustomerOverview() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="My Meters"       value={meters.length}                    sub="registered"           accent="text-brand-red"    icon={Gauge} />
         <StatCard label="Latest Reading"  value={lastReading ? lastReading.value : "—"} sub={lastReading?.unit ?? "no data"} accent="text-blue-600" icon={Activity} />
-        <StatCard label="Payments Made"   value={txns.filter(t=>t.status==="SUCCESS").length} sub="successful"   accent="text-emerald-600"  icon={CreditCard} />
-        <StatCard label="Active Alerts"   value={0}                                sub="on your account"      accent="text-amber-600"    icon={AlertTriangle} />
+        <StatCard label="Payments Made"   value={txns.filter((t: any) => t.status === "SUCCESS").length} sub="successful" accent="text-emerald-600" icon={CreditCard} />
+        <StatCard label="Outstanding"
+          value={unpaidInvoices.length > 0 ? `KES ${outstandingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "KES 0.00"}
+          sub={`${unpaidInvoices.length} unpaid invoice${unpaidInvoices.length !== 1 ? "s" : ""}`}
+          accent={unpaidInvoices.length > 0 ? "text-amber-600" : "text-emerald-600"}
+          icon={Receipt} />
       </div>
 
       {/* Consumption chart */}
@@ -126,6 +137,52 @@ export default function CustomerOverview() {
           </div>
         </div>
       )}
+
+      {/* Recent invoices */}
+      <div className="rounded-none border border-border bg-card p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="font-display text-sm font-semibold uppercase tracking-[0.15em]">Recent Invoices</h3>
+          <Link to="/dashboard/invoices" className="flex items-center gap-1 text-xs text-brand-red hover:underline">
+            View all <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        {invoices.length === 0 ? (
+          <div className="flex items-center gap-2 rounded-none border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            <CheckCircle2 className="h-4 w-4" /> No invoices yet.
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {invoices.map((inv: any) => {
+              const overdue = inv.status === "UNPAID" && inv.dueAt < new Date().toISOString().slice(0, 10);
+              return (
+                <div key={inv.id} className="flex items-center justify-between py-2.5">
+                  <div>
+                    <p className="text-sm font-medium">Invoice #{inv.id} · {inv.meter?.serialNumber ?? "—"}</p>
+                    <p className={`text-xs ${overdue ? "text-rose-600 font-medium" : "text-muted-foreground"}`}>
+                      {overdue ? `Overdue since ${inv.dueAt}` : inv.status === "PAID" ? `Paid` : `Due ${inv.dueAt}`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm font-semibold">KES {Number(inv.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 ${
+                      inv.status === "PAID"   ? "bg-emerald-100 text-emerald-700" :
+                      inv.status === "UNPAID" ? "bg-amber-100 text-amber-700" :
+                      "bg-muted text-muted-foreground"
+                    }`}>{inv.status}</span>
+                    {inv.status === "UNPAID" && (
+                      <Link to="/dashboard/invoices">
+                        <Button size="sm" className="h-7 rounded-none bg-brand-red px-3 text-[10px] font-semibold uppercase tracking-wider text-white hover:bg-brand-red/90">
+                          Pay
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* My meters */}
