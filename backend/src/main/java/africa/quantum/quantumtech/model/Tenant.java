@@ -44,7 +44,7 @@ public class Tenant {
     private String mpesaPasskey;
 
     // ── M-Pesa Daraja registration status ────────────────────────────────────
-    @Column(name = "mpesa_registered")
+    @Column(name = "mpesa_registered", nullable = false, columnDefinition = "boolean default false")
     private boolean mpesaRegistered = false;
 
     @Column(name = "mpesa_registered_at")
