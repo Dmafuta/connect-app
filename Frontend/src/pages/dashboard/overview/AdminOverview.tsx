@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import StatCard from "@/components/dashboard/StatCard";
 import {
-  UserCircle, Gauge, AlertTriangle, CreditCard,
+  UserCircle, Gauge, AlertTriangle, CreditCard, ClipboardList,
   Droplets, Zap, Flame, ArrowRight, CheckCircle2, Clock,
 } from "lucide-react";
 
@@ -52,7 +52,7 @@ export default function AdminOverview() {
         <StatCard label="Customers"     value={stats.customerCount} sub="registered accounts"      accent="text-brand-red"   icon={UserCircle} />
         <StatCard label="Active Meters" value={stats.activeMeters}  sub={`${stats.totalMeters} total`} accent="text-blue-600" icon={Gauge} />
         <StatCard label="Open Alerts"   value={stats.openAlerts}    sub="unresolved"                accent={stats.openAlerts > 0 ? "text-rose-600" : "text-emerald-600"} icon={AlertTriangle} />
-        <StatCard label="Meter Types"   value={3}                   sub="Water, Electricity, Gas"  accent="text-emerald-600" icon={CreditCard} />
+        <StatCard label="Faulty Meters" value={stats.faultyMeters}  sub="require attention"        accent={stats.faultyMeters > 0 ? "text-rose-600" : "text-emerald-600"} icon={CreditCard} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -126,6 +126,7 @@ export default function AdminOverview() {
             { label: "Register a meter",   href: "/dashboard/meters",      icon: Gauge },
             { label: "Review alerts",      href: "/dashboard/alerts",      icon: AlertTriangle },
             { label: "View transactions",  href: "/dashboard/transactions", icon: CreditCard },
+            { label: "Audit log",          href: "/dashboard/audit",       icon: ClipboardList },
           ].map(item => (
             <a key={item.href} href={item.href}
               className="flex items-center justify-between rounded-none px-3 py-2.5 text-sm hover:bg-muted transition-colors">

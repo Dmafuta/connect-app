@@ -22,7 +22,9 @@ export default function CustomerOverview() {
     Promise.all([
       api.get<any[]>("/api/meters/my"),
       api.get<any[]>("/api/readings/my"),
-      api.get<any[]>(`/api/mpesa/transactions/user/${user?.email}`).catch(() => []),
+      api.get<any>("/api/users/me")
+        .then(me => api.get<any[]>(`/api/mpesa/transactions/user/${me.id}`).catch(() => []))
+        .catch(() => []),
     ]).then(([m, r, t]) => { setMeters(m); setReadings(r); setTxns(t as any[]); })
       .finally(() => setLoading(false));
   }, []);

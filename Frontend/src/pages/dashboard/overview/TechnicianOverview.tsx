@@ -92,7 +92,7 @@ export default function TechnicianOverview() {
         <div className="rounded-none border border-border bg-card p-5">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-sm font-semibold uppercase tracking-[0.15em]">My Meters</h3>
-            <a href="/dashboard/meters" className="flex items-center gap-1 text-xs text-brand-red hover:underline">
+            <a href="/dashboard/my-assignments" className="flex items-center gap-1 text-xs text-brand-red hover:underline">
               View all <ArrowRight className="h-3 w-3" />
             </a>
           </div>

@@ -268,6 +268,7 @@ export default function SuperAdminOverview() {
               { label: "Review open alerts",    href: "/dashboard/alerts",       icon: AlertTriangle },
               { label: "View all transactions", href: "/dashboard/transactions", icon: CreditCard },
               { label: "Manage technicians",    href: "/dashboard/technicians",  icon: Server },
+              { label: "Audit log",             href: "/dashboard/audit",        icon: ShieldCheck },
             ].map(item => (
               <a key={item.href} href={item.href}
                 className="flex items-center justify-between rounded-none px-3 py-2.5 text-sm hover:bg-muted transition-colors">

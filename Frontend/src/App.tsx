@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,32 +9,32 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import ScrollToTop from "@/components/ScrollToTop";
 
-import Landing      from "./pages/Landing.tsx";
-import Auth         from "./pages/Auth.tsx";
-import VerifyEmail  from "./pages/VerifyEmail.tsx";
-import NotFound     from "./pages/NotFound.tsx";
-import Forbidden    from "./pages/Forbidden.tsx";
-import ComingSoon   from "./pages/ComingSoon.tsx";
-import ServerError  from "./pages/ServerError.tsx";
-import Careers      from "./pages/Careers.tsx";
-import About         from "./pages/About.tsx";
-import ResetPassword from "./pages/ResetPassword.tsx";
+const Landing       = lazy(() => import("./pages/Landing"));
+const Auth          = lazy(() => import("./pages/Auth"));
+const VerifyEmail   = lazy(() => import("./pages/VerifyEmail"));
+const NotFound      = lazy(() => import("./pages/NotFound"));
+const Forbidden     = lazy(() => import("./pages/Forbidden"));
+const ComingSoon    = lazy(() => import("./pages/ComingSoon"));
+const ServerError   = lazy(() => import("./pages/ServerError"));
+const Careers       = lazy(() => import("./pages/Careers"));
+const About         = lazy(() => import("./pages/About"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 // Dashboard pages
-import Overview      from "./pages/dashboard/Overview.tsx";
-import Users         from "./pages/dashboard/Users.tsx";
-import Customers     from "./pages/dashboard/Customers.tsx";
-import Technicians   from "./pages/dashboard/Technicians.tsx";
-import Meters        from "./pages/dashboard/Meters.tsx";
-import Readings      from "./pages/dashboard/Readings.tsx";
-import Alerts        from "./pages/dashboard/Alerts.tsx";
-import Transactions  from "./pages/dashboard/Transactions.tsx";
-import MyMeters           from "./pages/dashboard/MyMeters.tsx";
-import TechnicianMeters   from "./pages/dashboard/TechnicianMeters.tsx";
-import Settings      from "./pages/dashboard/Settings.tsx";
-import Tenants       from "./pages/dashboard/Tenants.tsx";
-import AuditLog      from "./pages/dashboard/AuditLog.tsx";
-import Reports       from "./pages/dashboard/Reports.tsx";
+const Overview         = lazy(() => import("./pages/dashboard/Overview"));
+const Users            = lazy(() => import("./pages/dashboard/Users"));
+const Customers        = lazy(() => import("./pages/dashboard/Customers"));
+const Technicians      = lazy(() => import("./pages/dashboard/Technicians"));
+const Meters           = lazy(() => import("./pages/dashboard/Meters"));
+const Readings         = lazy(() => import("./pages/dashboard/Readings"));
+const Alerts           = lazy(() => import("./pages/dashboard/Alerts"));
+const Transactions     = lazy(() => import("./pages/dashboard/Transactions"));
+const MyMeters         = lazy(() => import("./pages/dashboard/MyMeters"));
+const TechnicianMeters = lazy(() => import("./pages/dashboard/TechnicianMeters"));
+const Settings         = lazy(() => import("./pages/dashboard/Settings"));
+const Tenants          = lazy(() => import("./pages/dashboard/Tenants"));
+const AuditLog         = lazy(() => import("./pages/dashboard/AuditLog"));
+const Reports          = lazy(() => import("./pages/dashboard/Reports"));
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ScrollToTop />
+          <Suspense fallback={<div className="flex h-screen items-center justify-center text-sm text-muted-foreground">Loading…</div>}>
           <Routes>
             {/* Public */}
             <Route path="/"              element={<Landing />} />
@@ -85,6 +87,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
