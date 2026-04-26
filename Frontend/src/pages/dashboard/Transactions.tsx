@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreditCard, Loader2, RefreshCw, Download } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { exportCsv } from "@/lib/exportCsv";
 
 const STATUS_CLS: Record<string, string> = {
@@ -152,52 +153,64 @@ export default function Transactions() {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[550px] rounded-none border border-border bg-card">
-        <div className="grid grid-cols-[1fr_120px_100px_120px_80px] border-b border-border bg-muted px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-          <span>Reference</span><span>Phone</span><span>Amount</span><span>Time</span><span>Status</span>
-        </div>
-        {loading ? (
-          <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">Loading…</div>
-        ) : transactions.length === 0 ? (
-          <div className="flex h-48 flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
-            <CreditCard className="h-10 w-10 opacity-20" />
-            <div className="text-center">
-              {isCustomer ? (
-                <>
-                  <p className="font-medium text-foreground">No payments yet</p>
-                  <p className="mt-1 text-xs">Pay your utility bill instantly via M-Pesa STK Push.</p>
-                  <button
-                    onClick={() => setOpen(true)}
-                    className="mt-3 inline-flex items-center gap-1.5 rounded-none border border-brand-red px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-brand-red hover:bg-brand-red hover:text-white transition-colors"
-                  >
-                    <CreditCard className="h-3.5 w-3.5" /> Pay via M-Pesa
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p className="font-medium text-foreground">No transactions recorded</p>
-                  <p className="mt-1 text-xs">Customer M-Pesa payments will appear here once processed.</p>
-                </>
-              )}
-            </div>
-          </div>
-        ) : (
-          transactions.map((t: any) => (
-            <div key={t.id} className="grid grid-cols-[1fr_120px_100px_120px_80px] items-center border-b border-border px-4 py-3 text-sm last:border-0 hover:bg-muted/50 transition-colors">
-              <div>
-                <p className="font-medium font-mono text-xs">{t.mpesaReceiptNumber ?? t.checkoutRequestId?.slice(0, 20) + "…"}</p>
-              </div>
-              <span className="text-muted-foreground">{t.phoneNumber}</span>
-              <span className="font-semibold">KES {t.amount?.toLocaleString()}</span>
-              <span className="text-xs text-muted-foreground">{ago(t.createdAt)}</span>
-              <span className={`text-[10px] font-semibold uppercase ${STATUS_CLS[t.status] ?? "text-muted-foreground"}`}>
-                {t.status}
-              </span>
-            </div>
-          ))
-        )}
-        </div>
+      <div className="rounded-none border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted hover:bg-muted">
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Reference</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-36">Phone</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-28">Amount</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-32">Time</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-24">Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow><TableCell colSpan={5} className="h-32 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
+            ) : transactions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-48 p-0">
+                  <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+                    <CreditCard className="h-10 w-10 opacity-20" />
+                    <div className="text-center">
+                      {isCustomer ? (
+                        <>
+                          <p className="font-medium text-foreground">No payments yet</p>
+                          <p className="mt-1 text-xs">Pay your utility bill instantly via M-Pesa STK Push.</p>
+                          <button
+                            onClick={() => setOpen(true)}
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-none border border-brand-red px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-brand-red hover:bg-brand-red hover:text-white transition-colors"
+                          >
+                            <CreditCard className="h-3.5 w-3.5" /> Pay via M-Pesa
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium text-foreground">No transactions recorded</p>
+                          <p className="mt-1 text-xs">Customer M-Pesa payments will appear here once processed.</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              transactions.map((t: any) => (
+                <TableRow key={t.id}>
+                  <TableCell>
+                    <p className="font-medium font-mono text-xs">{t.mpesaReceiptNumber ?? t.checkoutRequestId?.slice(0, 20) + "…"}</p>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{t.phoneNumber}</TableCell>
+                  <TableCell className="font-semibold">KES {t.amount?.toLocaleString()}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{ago(t.createdAt)}</TableCell>
+                  <TableCell className={`text-[10px] font-semibold uppercase ${STATUS_CLS[t.status] ?? "text-muted-foreground"}`}>
+                    {t.status}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

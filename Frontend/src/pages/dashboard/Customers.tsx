@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { UserPlus, Search, Loader2, UserCircle } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
 export default function Customers() {
   const api = useApi();
@@ -95,47 +96,58 @@ export default function Customers() {
         <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search customers…" className="rounded-none pl-9" />
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[500px] rounded-none border border-border bg-card">
-        <div className="grid grid-cols-[1fr_1fr_1fr_80px] border-b border-border bg-muted px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-          <span>Name</span><span>Email</span><span>Phone</span><span>Status</span>
-        </div>
-        {loading ? (
-          <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">Loading…</div>
-        ) : filtered.length === 0 ? (
-          <div className="flex h-48 flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
-            <UserCircle className="h-10 w-10 opacity-20" />
-            <div className="text-center">
-              {search ? (
-                <>
-                  <p className="font-medium text-foreground">No customers match "{search}"</p>
-                  <p className="mt-1 text-xs">Try a different name or email address.</p>
-                </>
-              ) : (
-                <>
-                  <p className="font-medium text-foreground">No customers registered yet</p>
-                  <p className="mt-1 text-xs">Add your first customer to assign meters and track billing.</p>
-                  <button
-                    onClick={() => setOpen(true)}
-                    className="mt-3 inline-flex items-center gap-1.5 rounded-none border border-brand-red px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-brand-red hover:bg-brand-red hover:text-white transition-colors"
-                  >
-                    <UserPlus className="h-3.5 w-3.5" /> Add Customer
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        ) : (
-          filtered.map(c => (
-            <div key={c.id} className="grid grid-cols-[1fr_1fr_1fr_80px] border-b border-border px-4 py-3 text-sm last:border-0 hover:bg-muted/50 transition-colors">
-              <span className="font-medium">{c.firstName} {c.lastName}</span>
-              <span className="text-muted-foreground">{c.email}</span>
-              <span className="text-muted-foreground">{c.phone ?? "—"}</span>
-              <span className={`text-[10px] font-semibold uppercase ${c.active ? "text-emerald-600" : "text-rose-600"}`}>{c.active ? "Active" : "Inactive"}</span>
-            </div>
-          ))
-        )}
-        </div>
+      <div className="rounded-none border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted hover:bg-muted">
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Name</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Email</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Phone</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-24">Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow><TableCell colSpan={4} className="h-32 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
+            ) : filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-48 p-0">
+                  <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+                    <UserCircle className="h-10 w-10 opacity-20" />
+                    <div className="text-center">
+                      {search ? (
+                        <>
+                          <p className="font-medium text-foreground">No customers match "{search}"</p>
+                          <p className="mt-1 text-xs">Try a different name or email address.</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium text-foreground">No customers registered yet</p>
+                          <p className="mt-1 text-xs">Add your first customer to assign meters and track billing.</p>
+                          <button
+                            onClick={() => setOpen(true)}
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-none border border-brand-red px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-brand-red hover:bg-brand-red hover:text-white transition-colors"
+                          >
+                            <UserPlus className="h-3.5 w-3.5" /> Add Customer
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map(c => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium">{c.firstName} {c.lastName}</TableCell>
+                  <TableCell className="text-muted-foreground">{c.email}</TableCell>
+                  <TableCell className="text-muted-foreground">{c.phone ?? "—"}</TableCell>
+                  <TableCell className={`text-[10px] font-semibold uppercase ${c.active ? "text-emerald-600" : "text-rose-600"}`}>{c.active ? "Active" : "Inactive"}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

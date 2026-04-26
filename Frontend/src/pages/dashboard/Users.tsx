@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Users as UsersIcon, MoreHorizontal, UserPlus, Loader2 } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -205,86 +206,110 @@ export default function Users() {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[580px] rounded-none border border-border bg-card">
-        <div className="grid grid-cols-[1fr_1fr_120px_80px_40px] border-b border-border bg-muted px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-          <span>Name</span><span>Email</span><span>Role</span><span>Status</span><span />
-        </div>
-        {loading || loadingDeleted ? (
-          <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">Loading…</div>
-        ) : showDeleted ? (
-          deletedUsers.length === 0 ? (
-            <div className="flex h-32 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-              <UsersIcon className="h-8 w-8 opacity-30" />
-              No deleted users.
-            </div>
-          ) : (
-            deletedUsers
-              .filter(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase()))
-              .map(u => (
-                <div key={u.id} className="grid grid-cols-[1fr_1fr_120px_80px_40px] items-center border-b border-border px-4 py-3 text-sm last:border-0 bg-muted/20 transition-colors">
-                  <span className="font-medium text-muted-foreground line-through">{u.firstName} {u.lastName}</span>
-                  <span className="text-muted-foreground truncate">{u.email}</span>
-                  <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase opacity-50 ${ROLE_CLS[u.role] ?? "bg-muted text-muted-foreground"}`}>
-                    {u.role?.replace("_", " ")}
-                  </span>
-                  <span className="text-[10px] font-semibold uppercase text-rose-500">Deleted</span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 rounded-none p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-none w-44">
-                      <DropdownMenuItem onClick={() => restoreUser(u)} className="text-xs text-emerald-600 focus:text-emerald-600">
-                        Restore user
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+      <div className="rounded-none border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted hover:bg-muted">
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Name</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Email</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-32">Role</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-24">Status</TableHead>
+              <TableHead className="w-10" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading || loadingDeleted ? (
+              <TableRow><TableCell colSpan={5} className="h-32 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
+            ) : showDeleted ? (
+              deletedUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-32 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <UsersIcon className="h-8 w-8 opacity-30" />
+                      No deleted users.
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                deletedUsers
+                  .filter(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase()))
+                  .map(u => (
+                    <TableRow key={u.id} className="bg-muted/20 hover:bg-muted/30">
+                      <TableCell className="font-medium text-muted-foreground line-through">{u.firstName} {u.lastName}</TableCell>
+                      <TableCell className="text-muted-foreground truncate">{u.email}</TableCell>
+                      <TableCell>
+                        <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase opacity-50 ${ROLE_CLS[u.role] ?? "bg-muted text-muted-foreground"}`}>
+                          {u.role?.replace("_", " ")}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-[10px] font-semibold uppercase text-rose-500">Deleted</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 rounded-none p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-none w-44">
+                            <DropdownMenuItem onClick={() => restoreUser(u)} className="text-xs text-emerald-600 focus:text-emerald-600">
+                              Restore user
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+              )
+            ) : filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-32 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <UsersIcon className="h-8 w-8 opacity-30" />
+                    No users found.
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map(u => (
+                <TableRow key={u.id}>
+                  <TableCell className="font-medium">{u.firstName} {u.lastName}</TableCell>
+                  <TableCell className="text-muted-foreground truncate">{u.email}</TableCell>
+                  <TableCell>
+                    <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase ${ROLE_CLS[u.role] ?? "bg-muted text-muted-foreground"}`}>
+                      {u.role?.replace("_", " ")}
+                    </span>
+                  </TableCell>
+                  <TableCell className={`text-[10px] font-semibold uppercase ${u.active ? "text-emerald-600" : "text-rose-600"}`}>
+                    {u.active ? "Active" : "Inactive"}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 rounded-none p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="rounded-none w-44">
+                        <DropdownMenuItem onClick={() => toggleActive(u)} className="text-xs">
+                          {u.active ? "Deactivate" : "Activate"} account
+                        </DropdownMenuItem>
+                        {ROLES.filter(r => r !== u.role).map(r => (
+                          <DropdownMenuItem key={r} onClick={() => changeRole(u, r)} className="text-xs">
+                            Set as {r.replace("_", " ")}
+                          </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => deleteUser(u)} className="text-xs text-rose-600 focus:text-rose-600">
+                          Delete user
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
               ))
-          )
-        ) : filtered.length === 0 ? (
-          <div className="flex h-32 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-            <UsersIcon className="h-8 w-8 opacity-30" />
-            No users found.
-          </div>
-        ) : (
-          filtered.map(u => (
-            <div key={u.id} className="grid grid-cols-[1fr_1fr_120px_80px_40px] items-center border-b border-border px-4 py-3 text-sm last:border-0 hover:bg-muted/50 transition-colors">
-              <span className="font-medium">{u.firstName} {u.lastName}</span>
-              <span className="text-muted-foreground truncate">{u.email}</span>
-              <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase ${ROLE_CLS[u.role] ?? "bg-muted text-muted-foreground"}`}>
-                {u.role?.replace("_", " ")}
-              </span>
-              <span className={`text-[10px] font-semibold uppercase ${u.active ? "text-emerald-600" : "text-rose-600"}`}>
-                {u.active ? "Active" : "Inactive"}
-              </span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 rounded-none p-0">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="rounded-none w-44">
-                  <DropdownMenuItem onClick={() => toggleActive(u)} className="text-xs">
-                    {u.active ? "Deactivate" : "Activate"} account
-                  </DropdownMenuItem>
-                  {ROLES.filter(r => r !== u.role).map(r => (
-                    <DropdownMenuItem key={r} onClick={() => changeRole(u, r)} className="text-xs">
-                      Set as {r.replace("_", " ")}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => deleteUser(u)} className="text-xs text-rose-600 focus:text-rose-600">
-                    Delete user
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ))
-        )}
-        </div>
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       {page && <Pagination meta={page} onPageChange={handlePageChange} />}

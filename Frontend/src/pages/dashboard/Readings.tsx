@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Activity, Loader2, Download } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { exportCsv } from "@/lib/exportCsv";
 import Pagination, { PageResponse } from "@/components/dashboard/Pagination";
 
@@ -154,47 +155,60 @@ export default function Readings() {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[650px] rounded-none border border-border bg-card">
-        <div className="grid grid-cols-[1fr_100px_70px_80px_1fr_120px] border-b border-border bg-muted px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-          <span>Meter</span><span>Value</span><span>Unit</span><span>Type</span><span>Recorded By</span><span>Date</span>
-        </div>
-        {loading ? (
-          <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">Loading…</div>
-        ) : readings.length === 0 ? (
-          <div className="flex h-48 flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
-            <Activity className="h-10 w-10 opacity-20" />
-            <div className="text-center">
-              {isCustomer ? (
-                <>
-                  <p className="font-medium text-foreground">No readings on your meters yet</p>
-                  <p className="mt-1 text-xs">Your assigned technician logs readings during site visits. Check back soon.</p>
-                </>
-              ) : (
-                <>
-                  <p className="font-medium text-foreground">No readings logged yet</p>
-                  <p className="mt-1 text-xs">
-                    {canLog ? "Use the \"Log Reading\" button above to record the first reading." : "Readings will appear here once technicians start logging."}
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-        ) : (
-          readings.map((r: any) => (
-            <div key={r.id} className="grid grid-cols-[1fr_100px_70px_80px_1fr_120px] items-center border-b border-border px-4 py-3 text-sm last:border-0 hover:bg-muted/50 transition-colors">
-              <span className="font-medium">{r.meter?.serialNumber ?? `#${r.meterId}`}</span>
-              <span className="font-semibold text-foreground">{r.value?.toLocaleString()}</span>
-              <span className="text-muted-foreground">{r.unit}</span>
-              <span className="text-muted-foreground">{r.meter?.type ?? "—"}</span>
-              <span className="text-muted-foreground">
-                {r.recordedBy ? (r.recordedBy.fullName?.trim() || r.recordedBy.email) : "—"}
-              </span>
-              <span className="text-xs text-muted-foreground">{r.readAt ? ago(r.readAt) : "—"}</span>
-            </div>
-          ))
-        )}
-        </div>
+      <div className="rounded-none border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted hover:bg-muted">
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Meter</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-28">Value</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-20">Unit</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-24">Type</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Recorded By</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-32">Date</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow><TableCell colSpan={6} className="h-32 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
+            ) : readings.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-48 p-0">
+                  <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+                    <Activity className="h-10 w-10 opacity-20" />
+                    <div className="text-center">
+                      {isCustomer ? (
+                        <>
+                          <p className="font-medium text-foreground">No readings on your meters yet</p>
+                          <p className="mt-1 text-xs">Your assigned technician logs readings during site visits. Check back soon.</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium text-foreground">No readings logged yet</p>
+                          <p className="mt-1 text-xs">
+                            {canLog ? "Use the \"Log Reading\" button above to record the first reading." : "Readings will appear here once technicians start logging."}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              readings.map((r: any) => (
+                <TableRow key={r.id}>
+                  <TableCell className="font-medium">{r.meter?.serialNumber ?? `#${r.meterId}`}</TableCell>
+                  <TableCell className="font-semibold">{r.value?.toLocaleString()}</TableCell>
+                  <TableCell className="text-muted-foreground">{r.unit}</TableCell>
+                  <TableCell className="text-muted-foreground">{r.meter?.type ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {r.recordedBy ? (r.recordedBy.fullName?.trim() || r.recordedBy.email) : "—"}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{r.readAt ? ago(r.readAt) : "—"}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
       {!isCustomer && readingsPage && (
         <Pagination meta={readingsPage} onPageChange={p => setPageNum(p)} />

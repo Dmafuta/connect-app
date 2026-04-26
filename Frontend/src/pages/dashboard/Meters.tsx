@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Search, Loader2, Gauge, Droplets, Zap, Flame, MoreHorizontal, Trash2, UserCog } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ToastAction } from "@/components/ui/toast";
 import { useAuth } from "@/context/AuthContext";
@@ -190,59 +191,79 @@ export default function Meters() {
         <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search meters…" className="rounded-none pl-9" />
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[750px] rounded-none border border-border bg-card">
-        <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_100px_40px] border-b border-border bg-muted px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-          <span className="w-8" /><span>Serial</span><span>Type / Location</span><span>Customer</span><span>Technician</span><span>Status</span><span />
-        </div>
-        {loading ? (
-          <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">Loading…</div>
-        ) : filtered.length === 0 ? (
-          <div className="flex h-32 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Gauge className="h-8 w-8 opacity-30" />
-            {search ? "No meters match." : "No meters registered yet."}
-          </div>
-        ) : (
-          filtered.map(m => {
-            const Icon = TYPE_ICON[m.type] ?? Gauge;
-            const color = TYPE_COLOR[m.type] ?? "#888";
-            return (
-              <div key={m.id} className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_100px_40px] items-center border-b border-border px-4 py-3 text-sm last:border-0 hover:bg-muted/50 transition-colors">
-                <Icon className="mr-3 h-4 w-4 shrink-0" style={{ color }} />
-                <span className="font-medium">{m.serialNumber}</span>
-                <span className="text-muted-foreground">{m.type} · {m.location ?? "—"}</span>
-                <span className="text-muted-foreground">{m.customer ? `${m.customer.firstName} ${m.customer.lastName}` : "—"}</span>
-                <span className="text-muted-foreground">{m.technician ? `${m.technician.firstName} ${m.technician.lastName}` : "—"}</span>
-                <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase ${STATUS_CLS[m.status] ?? ""}`}>{m.status}</span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 rounded-none p-0" disabled={deleting === m.id}>
-                      {deleting === m.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="rounded-none w-44">
-                    <DropdownMenuItem onClick={() => openAssign(m)} className="text-xs">
-                      <UserCog className="mr-2 h-3.5 w-3.5" /> Assign / Reassign
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {m.status !== "ACTIVE"   && <DropdownMenuItem onClick={() => handleStatusChange(m, "ACTIVE")}   className="text-xs">Mark as Active</DropdownMenuItem>}
-                    {m.status !== "FAULTY"   && <DropdownMenuItem onClick={() => handleStatusChange(m, "FAULTY")}   className="text-xs">Mark as Faulty</DropdownMenuItem>}
-                    {m.status !== "INACTIVE" && <DropdownMenuItem onClick={() => handleStatusChange(m, "INACTIVE")} className="text-xs">Mark as Inactive</DropdownMenuItem>}
-                    {user?.role === "SUPER_ADMIN" && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleDelete(m)} className="text-xs text-rose-600 focus:text-rose-600">
-                          <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete meter
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            );
-          })
-        )}
-        </div>
+      <div className="rounded-none border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted hover:bg-muted">
+              <TableHead className="w-10" />
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Serial</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Type / Location</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Customer</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Technician</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-28">Status</TableHead>
+              <TableHead className="w-10" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow><TableCell colSpan={7} className="h-32 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
+            ) : filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-32 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <Gauge className="h-8 w-8 opacity-30" />
+                    {search ? "No meters match." : "No meters registered yet."}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map(m => {
+                const Icon = TYPE_ICON[m.type] ?? Gauge;
+                const color = TYPE_COLOR[m.type] ?? "#888";
+                return (
+                  <TableRow key={m.id}>
+                    <TableCell className="pr-0">
+                      <Icon className="h-4 w-4 shrink-0" style={{ color }} />
+                    </TableCell>
+                    <TableCell className="font-medium">{m.serialNumber}</TableCell>
+                    <TableCell className="text-muted-foreground">{m.type} · {m.location ?? "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">{m.customer ? `${m.customer.firstName} ${m.customer.lastName}` : "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">{m.technician ? `${m.technician.firstName} ${m.technician.lastName}` : "—"}</TableCell>
+                    <TableCell>
+                      <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase ${STATUS_CLS[m.status] ?? ""}`}>{m.status}</span>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 rounded-none p-0" disabled={deleting === m.id}>
+                            {deleting === m.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-none w-44">
+                          <DropdownMenuItem onClick={() => openAssign(m)} className="text-xs">
+                            <UserCog className="mr-2 h-3.5 w-3.5" /> Assign / Reassign
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {m.status !== "ACTIVE"   && <DropdownMenuItem onClick={() => handleStatusChange(m, "ACTIVE")}   className="text-xs">Mark as Active</DropdownMenuItem>}
+                          {m.status !== "FAULTY"   && <DropdownMenuItem onClick={() => handleStatusChange(m, "FAULTY")}   className="text-xs">Mark as Faulty</DropdownMenuItem>}
+                          {m.status !== "INACTIVE" && <DropdownMenuItem onClick={() => handleStatusChange(m, "INACTIVE")} className="text-xs">Mark as Inactive</DropdownMenuItem>}
+                          {user?.role === "SUPER_ADMIN" && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleDelete(m)} className="text-xs text-rose-600 focus:text-rose-600">
+                                <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete meter
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       </div>
       {page && <Pagination meta={page} onPageChange={p => { setPageNum(p); setSearch(""); }} />}
 

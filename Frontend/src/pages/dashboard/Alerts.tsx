@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, CheckCircle2, Clock, Plus, Loader2, Download } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { exportCsv } from "@/lib/exportCsv";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -194,67 +195,83 @@ export default function Alerts() {
         ))}
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[600px] rounded-none border border-border bg-card">
-        <div className="grid grid-cols-[1fr_100px_1fr_100px_100px] border-b border-border bg-muted px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-          <span>Type</span><span>Severity</span><span>Message</span><span>Time</span><span>Action</span>
-        </div>
-        {loading ? (
-          <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">Loading…</div>
-        ) : alerts.length === 0 ? (
-          <div className="flex h-48 flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
-            <CheckCircle2 className={`h-10 w-10 ${filter === "OPEN" ? "text-emerald-500 opacity-60" : "opacity-20"}`} />
-            <div className="text-center">
-              {filter === "OPEN" ? (
-                <>
-                  <p className="font-medium text-emerald-700">All clear — system nominal</p>
-                  <p className="mt-1 text-xs">No open alerts. All meters are operating within expected parameters.</p>
-                </>
-              ) : filter === "RESOLVED" ? (
-                <>
-                  <p className="font-medium text-foreground">No resolved alerts</p>
-                  <p className="mt-1 text-xs">Alerts you resolve will appear here for your records.</p>
-                </>
-              ) : (
-                <>
-                  <p className="font-medium text-foreground">No alerts in the system</p>
-                  <p className="mt-1 text-xs">Use "Log Alert" above to manually flag a meter issue.</p>
-                </>
-              )}
-            </div>
-          </div>
-        ) : (
-          alerts.map(a => (
-            <div key={a.id} className="grid grid-cols-[1fr_100px_1fr_100px_100px] items-center border-b border-border px-4 py-3 text-sm last:border-0 hover:bg-muted/50 transition-colors">
-              <div>
-                <p className="font-medium">{a.alertType?.replace(/_/g, " ")}</p>
-                <p className="text-xs text-muted-foreground">{a.meter?.serialNumber ?? `Meter #${a.meterId ?? "—"}`}</p>
-              </div>
-              <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase ${SEVERITY_CLS[a.severity] ?? "bg-muted text-muted-foreground"}`}>
-                {a.severity}
-              </span>
-              <span className="text-muted-foreground">{a.message ?? "—"}</span>
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" /> {ago(a.createdAt)}
-              </span>
-              <div>
-                {!a.resolved ? (
-                  <Button size="sm" variant="outline"
-                    disabled={resolving === a.id}
-                    onClick={() => resolve(a.id)}
-                    className="h-7 rounded-none px-2 text-[10px] font-semibold uppercase tracking-wider">
-                    {resolving === a.id ? "…" : "Resolve"}
-                  </Button>
-                ) : (
-                  <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
-                    <CheckCircle2 className="h-3 w-3" /> Resolved
-                  </span>
-                )}
-              </div>
-            </div>
-          ))
-        )}
-        </div>
+      <div className="rounded-none border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted hover:bg-muted">
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Type</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-28">Severity</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Message</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-28">Time</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-28">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow><TableCell colSpan={5} className="h-32 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
+            ) : alerts.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-48 p-0">
+                  <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+                    <CheckCircle2 className={`h-10 w-10 ${filter === "OPEN" ? "text-emerald-500 opacity-60" : "opacity-20"}`} />
+                    <div className="text-center">
+                      {filter === "OPEN" ? (
+                        <>
+                          <p className="font-medium text-emerald-700">All clear — system nominal</p>
+                          <p className="mt-1 text-xs">No open alerts. All meters are operating within expected parameters.</p>
+                        </>
+                      ) : filter === "RESOLVED" ? (
+                        <>
+                          <p className="font-medium text-foreground">No resolved alerts</p>
+                          <p className="mt-1 text-xs">Alerts you resolve will appear here for your records.</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium text-foreground">No alerts in the system</p>
+                          <p className="mt-1 text-xs">Use "Log Alert" above to manually flag a meter issue.</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              alerts.map(a => (
+                <TableRow key={a.id}>
+                  <TableCell>
+                    <p className="font-medium">{a.alertType?.replace(/_/g, " ")}</p>
+                    <p className="text-xs text-muted-foreground">{a.meter?.serialNumber ?? `Meter #${a.meterId ?? "—"}`}</p>
+                  </TableCell>
+                  <TableCell>
+                    <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase ${SEVERITY_CLS[a.severity] ?? "bg-muted text-muted-foreground"}`}>
+                      {a.severity}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{a.message ?? "—"}</TableCell>
+                  <TableCell>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" /> {ago(a.createdAt)}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {!a.resolved ? (
+                      <Button size="sm" variant="outline"
+                        disabled={resolving === a.id}
+                        onClick={() => resolve(a.id)}
+                        className="h-7 rounded-none px-2 text-[10px] font-semibold uppercase tracking-wider">
+                        {resolving === a.id ? "…" : "Resolve"}
+                      </Button>
+                    ) : (
+                      <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+                        <CheckCircle2 className="h-3 w-3" /> Resolved
+                      </span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
       {alertsPage && <Pagination meta={alertsPage} onPageChange={p => { setPageNum(p); load(p); }} />}
     </div>

@@ -9,6 +9,7 @@ import {
   Gauge, Droplets, Zap, Flame, Activity, Search,
   Loader2, UserCircle, MapPin, ClipboardList,
 } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
 const TYPE_ICON: Record<string, React.ElementType>  = { WATER: Droplets, ELECTRICITY: Zap, GAS: Flame };
 const TYPE_COLOR: Record<string, string> = { WATER: "#3b82f6", ELECTRICITY: "#f59e0b", GAS: "#10b981" };
@@ -128,88 +129,93 @@ export default function TechnicianMeters() {
       </div>
 
       {/* Meter list */}
-      {loading ? (
-        <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">Loading…</div>
-      ) : filtered.length === 0 ? (
-        <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-none border border-border text-sm text-muted-foreground">
-          <Gauge className="h-10 w-10 opacity-20" />
-          <div className="text-center">
-            <p className="font-medium">{search ? "No meters match." : "No meters assigned to you yet."}</p>
-            {!search && <p className="text-xs mt-1">Contact your administrator to get assignments.</p>}
-          </div>
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <div className="min-w-[650px] rounded-none border border-border bg-card">
-          {/* Table header */}
-          <div className="grid grid-cols-[auto_1fr_1fr_1fr_140px_80px] border-b border-border bg-muted px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-            <span className="w-8" />
-            <span>Meter</span>
-            <span>Customer</span>
-            <span>Last Reading</span>
-            <span>Status</span>
-            <span />
-          </div>
-
-          {filtered.map(m => {
-            const Icon  = TYPE_ICON[m.type]  ?? Gauge;
-            const color = TYPE_COLOR[m.type] ?? "#888";
-            const last  = readings.get(m.id);
-
-            return (
-              <div key={m.id}
-                   className="grid grid-cols-[auto_1fr_1fr_1fr_140px_80px] items-center border-b border-border px-4 py-3 text-sm last:border-0 hover:bg-muted/50 transition-colors">
-                <Icon className="mr-3 h-4 w-4 shrink-0" style={{ color }} />
-
-                <div>
-                  <p className="font-medium">{m.serialNumber}</p>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                    <MapPin className="h-3 w-3" />
-                    {m.location ?? "No location"}
+      <div className="rounded-none border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted hover:bg-muted">
+              <TableHead className="w-10" />
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Meter</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Customer</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em]">Last Reading</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.15em] w-36">Status</TableHead>
+              <TableHead className="w-20" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow><TableCell colSpan={6} className="h-40 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
+            ) : filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-48 p-0">
+                  <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+                    <Gauge className="h-10 w-10 opacity-20" />
+                    <div className="text-center">
+                      <p className="font-medium">{search ? "No meters match." : "No meters assigned to you yet."}</p>
+                      {!search && <p className="text-xs mt-1">Contact your administrator to get assignments.</p>}
+                    </div>
                   </div>
-                </div>
-
-                <div className="text-xs text-muted-foreground">
-                  {m.customer ? (
-                    <div className="flex items-center gap-1.5">
-                      <UserCircle className="h-3.5 w-3.5 shrink-0" />
-                      <span className="truncate">{m.customer.firstName} {m.customer.lastName}</span>
-                    </div>
-                  ) : (
-                    <span className="italic">Unassigned</span>
-                  )}
-                </div>
-
-                <div>
-                  {last ? (
-                    <div>
-                      <p className="font-medium tabular-nums">{last.value?.toLocaleString()} <span className="font-normal text-muted-foreground text-xs">{last.unit}</span></p>
-                      <p className="text-xs text-muted-foreground">{ago(last.readAt)}</p>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Activity className="h-3.5 w-3.5" /> No readings
-                    </div>
-                  )}
-                </div>
-
-                <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase ${STATUS_CLS[m.status] ?? ""}`}>
-                  {m.status}
-                </span>
-
-                <Button
-                  size="sm"
-                  onClick={() => openLog(m)}
-                  className="h-7 rounded-none bg-brand-red px-3 text-[10px] font-semibold uppercase tracking-wider text-white hover:bg-brand-red/90"
-                >
-                  <ClipboardList className="mr-1.5 h-3 w-3" /> Log
-                </Button>
-              </div>
-            );
-          })}
-          </div>
-        </div>
-      )}
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map(m => {
+                const Icon  = TYPE_ICON[m.type]  ?? Gauge;
+                const color = TYPE_COLOR[m.type] ?? "#888";
+                const last  = readings.get(m.id);
+                return (
+                  <TableRow key={m.id}>
+                    <TableCell className="pr-0">
+                      <Icon className="h-4 w-4 shrink-0" style={{ color }} />
+                    </TableCell>
+                    <TableCell>
+                      <p className="font-medium">{m.serialNumber}</p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                        <MapPin className="h-3 w-3" />
+                        {m.location ?? "No location"}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {m.customer ? (
+                        <div className="flex items-center gap-1.5">
+                          <UserCircle className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{m.customer.firstName} {m.customer.lastName}</span>
+                        </div>
+                      ) : (
+                        <span className="italic">Unassigned</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {last ? (
+                        <div>
+                          <p className="font-medium tabular-nums">{last.value?.toLocaleString()} <span className="font-normal text-muted-foreground text-xs">{last.unit}</span></p>
+                          <p className="text-xs text-muted-foreground">{ago(last.readAt)}</p>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Activity className="h-3.5 w-3.5" /> No readings
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase ${STATUS_CLS[m.status] ?? ""}`}>
+                        {m.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        onClick={() => openLog(m)}
+                        className="h-7 rounded-none bg-brand-red px-3 text-[10px] font-semibold uppercase tracking-wider text-white hover:bg-brand-red/90"
+                      >
+                        <ClipboardList className="mr-1.5 h-3 w-3" /> Log
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* Log reading dialog */}
       <Dialog open={!!logTarget} onOpenChange={open => { if (!open) setLogTarget(null); }}>
