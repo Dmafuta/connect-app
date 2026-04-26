@@ -38,10 +38,10 @@ export default function SuperAdminOverview() {
 
   useEffect(() => {
     Promise.all([
-      api.get<any>("/api/stats"),
+      api.get<any>("/api/stats").catch(() => ({})),
       api.get<any>("/api/mpesa/transactions/all").catch(() => []),
     ]).then(([s, t]) => {
-      setStats(s);
+      setStats(s ?? {});
       setTransactions(Array.isArray(t) ? t : (t.content ?? []));
     }).finally(() => setLoading(false));
   }, []);
@@ -49,6 +49,12 @@ export default function SuperAdminOverview() {
   if (loading) return (
     <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
       Loading dashboard…
+    </div>
+  );
+
+  if (!stats || Object.keys(stats).length === 0) return (
+    <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+      Unable to load dashboard stats. Check backend connectivity.
     </div>
   );
 
