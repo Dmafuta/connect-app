@@ -29,7 +29,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         // SUPER_ADMIN is a platform-level account — no tenant
-        seedSuperAdmin("superadmin@quantum.local", "Admin@123", "Super", "Admin");
+        seedSuperAdmin("dennis@quantumconnect.africa", "Admin@123", "Dennis", "Mafuta");
 
         // Demo tenant with tenant-scoped users
         Tenant defaultTenant = seedTenant("QuantumConnect", "quantumconnect");
