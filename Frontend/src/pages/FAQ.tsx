@@ -1,12 +1,28 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  ArrowRight,
+  ShieldCheck,
+  Gauge,
+  CreditCard,
+  Activity,
+  HelpCircle,
+  Smartphone,
+} from "lucide-react";
 import PublicHeader from "@/components/public/PublicHeader";
 import PublicFooter from "@/components/public/PublicFooter";
 
-const FAQS: { category: string; items: { q: string; a: string }[] }[] = [
+const categories = [
   {
-    category: "Getting Started",
+    id: "getting-started",
+    label: "Getting Started",
+    icon: Gauge,
     items: [
       {
         q: "What is QuantumConnect?",
@@ -27,7 +43,9 @@ const FAQS: { category: string; items: { q: string; a: string }[] }[] = [
     ],
   },
   {
-    category: "Billing & Invoices",
+    id: "billing",
+    label: "Billing & Invoices",
+    icon: CreditCard,
     items: [
       {
         q: "How are invoices generated?",
@@ -48,7 +66,9 @@ const FAQS: { category: string; items: { q: string; a: string }[] }[] = [
     ],
   },
   {
-    category: "Payments via M-Pesa",
+    id: "mpesa",
+    label: "M-Pesa Payments",
+    icon: Smartphone,
     items: [
       {
         q: "How do I pay my bill using M-Pesa?",
@@ -69,7 +89,9 @@ const FAQS: { category: string; items: { q: string; a: string }[] }[] = [
     ],
   },
   {
-    category: "Meter Readings",
+    id: "readings",
+    label: "Meter Readings",
+    icon: Activity,
     items: [
       {
         q: "How often are meter readings taken?",
@@ -86,7 +108,9 @@ const FAQS: { category: string; items: { q: string; a: string }[] }[] = [
     ],
   },
   {
-    category: "Account & Security",
+    id: "security",
+    label: "Account & Security",
+    icon: ShieldCheck,
     items: [
       {
         q: "How do I log in?",
@@ -107,7 +131,9 @@ const FAQS: { category: string; items: { q: string; a: string }[] }[] = [
     ],
   },
   {
-    category: "Support",
+    id: "support",
+    label: "Support",
+    icon: HelpCircle,
     items: [
       {
         q: "How do I contact QuantumConnect support?",
@@ -117,86 +143,158 @@ const FAQS: { category: string; items: { q: string; a: string }[] }[] = [
         q: "Is there a mobile app?",
         a: "The dashboard is fully responsive and works on any modern mobile browser. A dedicated mobile app is on our roadmap.",
       },
+      {
+        q: "What browsers are supported?",
+        a: "QuantumConnect works on all modern browsers — Chrome, Firefox, Edge, and Safari. We recommend keeping your browser up to date for the best experience.",
+      },
     ],
   },
 ];
 
-function FAQItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false);
+const FAQ = () => {
   return (
-    <div className="border-b border-border last:border-0">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between gap-4 py-5 text-left"
-      >
-        <span className="text-sm font-medium leading-snug">{q}</span>
-        {open
-          ? <ChevronUp className="h-4 w-4 shrink-0 text-brand-red" />
-          : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-        }
-      </button>
-      {open && (
-        <p className="pb-5 text-sm leading-relaxed text-muted-foreground">{a}</p>
-      )}
-    </div>
-  );
-}
-
-export default function FAQ() {
-  return (
-    <div className="min-h-screen bg-background font-sans">
+    <div className="min-h-screen bg-background text-foreground">
       <PublicHeader />
 
       {/* Hero */}
-      <section className="border-b border-border bg-brand-black px-6 py-20 text-primary-foreground">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-brand-red">
-            Support
-          </p>
-          <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight md:text-5xl">
-            Frequently asked questions
-          </h1>
-          <p className="mt-5 text-base text-primary-foreground/70">
-            Everything you need to know about QuantumConnect. Can't find an answer?{" "}
-            <a
-              href="mailto:support@quantumconnect.africa"
-              className="text-brand-red underline-offset-4 hover:underline"
-            >
-              Contact us
-            </a>
-            .
-          </p>
+      <section className="relative overflow-hidden border-b border-border bg-brand-black text-primary-foreground">
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--brand-red)/0.35),transparent_60%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.08)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.08)_1px,transparent_1px)] bg-[size:48px_48px]" />
+        </div>
+        <div className="relative mx-auto grid max-w-7xl gap-12 px-6 py-24 md:grid-cols-[1.1fr_0.9fr] md:py-32">
+          <div>
+            <div className="mb-6 inline-flex items-center gap-2 border border-border/40 bg-background/5 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.22em] text-primary-foreground/80">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand-red" />
+              Frequently asked
+            </div>
+            <h1 className="font-display text-5xl font-semibold leading-[1.05] tracking-tight md:text-7xl">
+              Straight answers,
+              <br />
+              <span className="text-brand-red">no jargon.</span>
+            </h1>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-primary-foreground/70 md:text-lg">
+              Everything customers, administrators and new users ask us.
+              If your question isn't here, the team is one message away.
+            </p>
+          </div>
+          <div className="relative hidden md:block">
+            <div className="absolute right-0 top-1/2 -translate-y-1/2">
+              <div className="grid grid-cols-3 gap-3">
+                {categories.map((c) => {
+                  const Icon = c.icon;
+                  return (
+                    <a
+                      key={c.id}
+                      href={`#${c.id}`}
+                      className="group flex aspect-square w-28 flex-col items-start justify-between border border-border/30 bg-background/5 p-3 transition-colors hover:border-brand-red hover:bg-brand-red/10"
+                    >
+                      <Icon className="h-5 w-5 text-brand-red" />
+                      <span className="font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/90">
+                        {c.label}
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* FAQ sections */}
-      <section className="mx-auto max-w-3xl px-6 py-16">
-        <div className="space-y-12">
-          {FAQS.map((section) => (
-            <div key={section.category}>
-              <h2 className="mb-1 font-display text-xs font-semibold uppercase tracking-[0.25em] text-brand-red">
-                {section.category}
-              </h2>
-              <div className="mt-4 rounded-none border border-border bg-card px-6">
-                {section.items.map((item) => (
-                  <FAQItem key={item.q} q={item.q} a={item.a} />
-                ))}
+      {/* FAQ body */}
+      <section className="border-b border-border bg-background">
+        <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
+          <div className="grid gap-16 md:grid-cols-[280px_1fr]">
+            {/* Sticky sidebar */}
+            <aside className="md:sticky md:top-24 md:self-start">
+              <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+                Index
               </div>
-            </div>
-          ))}
-        </div>
+              <ul className="mt-6 space-y-1 border-l border-border">
+                {categories.map((c) => (
+                  <li key={c.id}>
+                    <a
+                      href={`#${c.id}`}
+                      className="block border-l-2 border-transparent py-2 pl-4 font-display text-sm uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-brand-red hover:text-foreground"
+                    >
+                      {c.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </aside>
 
-        {/* CTA */}
-        <div className="mt-16 rounded-none border border-border bg-card px-8 py-10 text-center">
-          <h3 className="font-display text-lg font-semibold">Still have questions?</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Our support team is available Monday – Friday, 8 am – 6 pm EAT.
-          </p>
-          <a
-            href="mailto:support@quantumconnect.africa"
-            className="mt-6 inline-flex items-center gap-2 bg-brand-red px-6 py-2.5 text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:bg-brand-red/90"
-          >
-            Email support
+            {/* Accordions */}
+            <div className="space-y-20">
+              {categories.map((c, idx) => {
+                const Icon = c.icon;
+                return (
+                  <div key={c.id} id={c.id} className="scroll-mt-24">
+                    <div className="mb-8 flex items-center gap-4 border-b border-border pb-6">
+                      <span className="flex h-12 w-12 items-center justify-center border border-border bg-secondary">
+                        <Icon className="h-5 w-5 text-brand-red" />
+                      </span>
+                      <div>
+                        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+                          0{idx + 1} — Section
+                        </div>
+                        <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+                          {c.label}
+                        </h2>
+                      </div>
+                    </div>
+                    <Accordion type="single" collapsible className="w-full">
+                      {c.items.map((item, i) => (
+                        <AccordionItem
+                          key={i}
+                          value={`${c.id}-${i}`}
+                          className="border-b border-border"
+                        >
+                          <AccordionTrigger className="py-6 text-left font-display text-lg font-medium tracking-tight hover:no-underline md:text-xl">
+                            {item.q}
+                          </AccordionTrigger>
+                          <AccordionContent className="pb-6 text-base leading-relaxed text-muted-foreground">
+                            {item.a}
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="border-b border-border bg-brand-black text-primary-foreground">
+        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-20 md:grid-cols-[1fr_auto] md:items-center md:py-24">
+          <div className="flex items-start gap-6">
+            <span className="hidden h-14 w-14 shrink-0 items-center justify-center border border-border/30 md:flex">
+              <HelpCircle className="h-6 w-6 text-brand-red" />
+            </span>
+            <div>
+              <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.22em] text-primary-foreground/60">
+                Still curious
+              </div>
+              <h2 className="font-display text-3xl font-semibold tracking-tight md:text-5xl">
+                Talk to a real person,
+                <br />
+                <span className="text-brand-red">not a chatbot.</span>
+              </h2>
+              <p className="mt-4 max-w-xl text-primary-foreground/70">
+                Our support team responds within one business day — usually faster.
+                No automated queues, no runaround.
+              </p>
+            </div>
+          </div>
+          <a href="mailto:support@quantumconnect.africa">
+            <Button className="h-14 rounded-none bg-brand-red px-8 font-display text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground hover:bg-brand-red/90">
+              Contact support
+              <ArrowRight className="ml-3 h-4 w-4" />
+            </Button>
           </a>
         </div>
       </section>
@@ -204,4 +302,6 @@ export default function FAQ() {
       <PublicFooter />
     </div>
   );
-}
+};
+
+export default FAQ;
