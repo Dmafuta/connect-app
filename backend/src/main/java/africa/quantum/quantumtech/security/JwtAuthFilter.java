@@ -33,23 +33,23 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if ((authHeader == null || !authHeader.startsWith("Bearer ")) && request.getParameter("token") != null) {
             authHeader = "Bearer " + request.getParameter("token");
         }
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            if (jwtUtil.isTokenValid(token)) {
-                Long tenantId = jwtUtil.extractTenantId(token);
-                if (tenantId != null) {
-                    TenantContext.set(tenantId);
-                }
-                String email = jwtUtil.extractEmail(token);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                );
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            }
-        }
         try {
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                if (jwtUtil.isTokenValid(token)) {
+                    Long tenantId = jwtUtil.extractTenantId(token);
+                    if (tenantId != null) {
+                        TenantContext.set(tenantId);
+                    }
+                    String email = jwtUtil.extractEmail(token);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities()
+                    );
+                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
+            }
             chain.doFilter(request, response);
         } finally {
             TenantContext.clear();
