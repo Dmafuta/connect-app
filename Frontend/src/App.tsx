@@ -18,6 +18,7 @@ const ComingSoon    = lazy(() => import("./pages/ComingSoon"));
 const ServerError   = lazy(() => import("./pages/ServerError"));
 const Careers       = lazy(() => import("./pages/Careers"));
 const About         = lazy(() => import("./pages/About"));
+const FAQ           = lazy(() => import("./pages/FAQ"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 // Dashboard pages
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/coming-soon"   element={<ComingSoon />} />
             <Route path="/careers"       element={<Careers />} />
             <Route path="/about"         element={<About />} />
+            <Route path="/faq"           element={<FAQ />} />
 
             {/* Dashboard — all authenticated */}
             <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />

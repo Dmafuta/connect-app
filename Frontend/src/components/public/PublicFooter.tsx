@@ -66,6 +66,11 @@ export default function PublicFooter() {
               </Link>
             </li>
             <li>
+              <Link to="/faq" className="text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                FAQ
+              </Link>
+            </li>
+            <li>
               <a href="mailto:hello@quantumconnect.africa" className="text-primary-foreground/70 transition-colors hover:text-primary-foreground">
                 Contact
               </a>
