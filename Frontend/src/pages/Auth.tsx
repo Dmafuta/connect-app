@@ -74,6 +74,7 @@ const Auth = () => {
         if (!res.ok) throw new Error(data.message || "Verification failed");
         login({
           token: data.token,
+          refreshToken: data.refreshToken ?? "",
           email: data.email,
           role: data.role,
           fullName: data.fullName ?? "",
@@ -116,6 +117,7 @@ const Auth = () => {
 
       login({
         token: data.token,
+        refreshToken: data.refreshToken ?? "",
         email: data.email,
         role: data.role,
         fullName: data.fullName ?? "",

@@ -61,6 +61,14 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const visibleNav = NAV.filter(n => user && n.roles.includes(user.role));
 
   const handleLogout = () => {
+    const refreshToken = localStorage.getItem("refreshToken");
+    if (refreshToken) {
+      fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      }).catch(() => {});
+    }
     logout();
     navigate("/");
   };

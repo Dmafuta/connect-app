@@ -4,6 +4,7 @@ import africa.quantum.quantumtech.dto.AuthResponse;
 import africa.quantum.quantumtech.dto.ErrorResponse;
 import africa.quantum.quantumtech.dto.LoginRequest;
 import africa.quantum.quantumtech.dto.RegisterRequest;
+import africa.quantum.quantumtech.model.RefreshToken;
 import africa.quantum.quantumtech.model.Role;
 import africa.quantum.quantumtech.model.Tenant;
 import africa.quantum.quantumtech.model.User;
@@ -13,6 +14,7 @@ import africa.quantum.quantumtech.repository.UserRepository;
 import africa.quantum.quantumtech.security.JwtUtil;
 import africa.quantum.quantumtech.security.TenantContext;
 import africa.quantum.quantumtech.service.OtpService;
+import africa.quantum.quantumtech.service.RefreshTokenService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -34,6 +36,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
     private final OtpService otpService;
+    private final RefreshTokenService refreshTokenService;
 
     @Value("${app.url}")
     private String appUrl;
@@ -44,14 +47,16 @@ public class AuthController {
                           AuthenticationManager authManager,
                           JwtUtil jwtUtil,
                           EmailService emailService,
-                          OtpService otpService) {
-        this.userRepository   = userRepository;
-        this.tenantRepository = tenantRepository;
-        this.passwordEncoder  = passwordEncoder;
-        this.authManager      = authManager;
-        this.jwtUtil          = jwtUtil;
-        this.emailService     = emailService;
-        this.otpService       = otpService;
+                          OtpService otpService,
+                          RefreshTokenService refreshTokenService) {
+        this.userRepository      = userRepository;
+        this.tenantRepository    = tenantRepository;
+        this.passwordEncoder     = passwordEncoder;
+        this.authManager         = authManager;
+        this.jwtUtil             = jwtUtil;
+        this.emailService        = emailService;
+        this.otpService          = otpService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     /** Register — creates account, sends email verification link + phone OTP if phone given. */
@@ -333,8 +338,9 @@ public class AuthController {
                 return ResponseEntity.status(401).body(new ErrorResponse("Unauthorized"));
             }
             String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), null);
+            RefreshToken rt = refreshTokenService.create(user);
             return ResponseEntity.ok(new AuthResponse(
-                    token, user.getEmail(), user.getRole().name(), user.getFullName(), "", ""));
+                    token, rt.getToken(), user.getEmail(), user.getRole().name(), user.getFullName(), "", ""));
         }
 
         // Tenant login
@@ -343,9 +349,43 @@ public class AuthController {
         User user = userRepository.findByEmailAndTenant(email, tenant).orElseThrow();
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), tenant.getId());
+        RefreshToken rt = refreshTokenService.create(user);
         return ResponseEntity.ok(new AuthResponse(
-                token, user.getEmail(), user.getRole().name(), user.getFullName(),
+                token, rt.getToken(), user.getEmail(), user.getRole().name(), user.getFullName(),
                 tenant.getCode(), tenant.getName()
         ));
+    }
+
+    /** POST /api/auth/refresh — exchange a valid refresh token for a new access + refresh token pair. */
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {
+        String refreshTokenValue = body.get("refreshToken");
+        if (refreshTokenValue == null) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("refreshToken is required"));
+        }
+        return refreshTokenService.validate(refreshTokenValue)
+                .map(rt -> {
+                    User user = rt.getUser();
+                    Long tenantId = user.getTenant() != null ? user.getTenant().getId() : null;
+                    String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), tenantId);
+                    // Rotate: revoke old, issue new
+                    refreshTokenService.revoke(refreshTokenValue);
+                    RefreshToken newRt = refreshTokenService.create(user);
+                    return ResponseEntity.ok(Map.of(
+                            "token", newAccessToken,
+                            "refreshToken", newRt.getToken()
+                    ));
+                })
+                .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Refresh token is invalid or expired")));
+    }
+
+    /** POST /api/auth/logout — revoke the refresh token so it can no longer be used. */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestBody Map<String, String> body) {
+        String refreshTokenValue = body.get("refreshToken");
+        if (refreshTokenValue != null) {
+            refreshTokenService.revoke(refreshTokenValue);
+        }
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 }
