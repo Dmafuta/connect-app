@@ -211,15 +211,36 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /** Update own profile (firstName, lastName, phone) — any authenticated user */
+    /** Update own profile (firstName, lastName, phone, username) — any authenticated user */
     @PatchMapping("/me")
     public ResponseEntity<?> updateProfile(@RequestHeader("Authorization") String authHeader,
                                            @RequestBody Map<String, String> body) {
         String email = jwtUtil.extractEmail(authHeader.substring(7));
+
+        if (body.containsKey("username")) {
+            String newUsername = body.get("username");
+            if (newUsername == null || newUsername.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Username cannot be blank"));
+            }
+            if (!newUsername.matches("^[a-zA-Z0-9._-]{3,30}$")) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Username must be 3–30 characters: letters, numbers, dots, underscores, hyphens only"));
+            }
+            // Uniqueness check: only reject if another user in the same tenant has this username
+            Long tenantId = TenantContext.get();
+            if (tenantId != null) {
+                Tenant tenant = currentTenant();
+                boolean taken = findCurrentUser(email)
+                        .map(u -> !newUsername.equals(u.getUsername()) && userRepository.existsByUsernameAndTenant(newUsername, tenant))
+                        .orElse(false);
+                if (taken) return ResponseEntity.badRequest().body(Map.of("message", "Username already taken"));
+            }
+        }
+
         return findCurrentUser(email).map(u -> {
             if (body.containsKey("firstName")) u.setFirstName(body.get("firstName"));
             if (body.containsKey("lastName"))  u.setLastName(body.get("lastName"));
             if (body.containsKey("phone"))     u.setPhone(body.get("phone"));
+            if (body.containsKey("username"))  u.setUsername(body.get("username"));
             return ResponseEntity.ok(userRepository.save(u));
         }).orElse(ResponseEntity.notFound().build());
     }

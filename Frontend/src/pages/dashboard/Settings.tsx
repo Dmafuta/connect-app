@@ -50,7 +50,7 @@ export default function Settings() {
       });
       setProfileUsername(me.username ?? "");
     }).catch(() => {});
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load org settings
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function Settings() {
     e.preventDefault();
     setProfileSaving(true);
     try {
-      await api.patch("/api/users/me", profileForm);
+      await api.patch("/api/users/me", { ...profileForm, username: profileUsername });
       updateProfile(profileForm.firstName, profileForm.lastName);
       toast({ title: "Profile updated" });
     } catch (err: any) {
@@ -178,12 +178,18 @@ export default function Settings() {
             <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Email</Label>
             <Input value={user?.email ?? ""} disabled className="rounded-none bg-muted/50 text-muted-foreground cursor-not-allowed" />
           </div>
-          {profileUsername && (
-            <div className="space-y-1.5">
-              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Username <span className="normal-case font-normal text-muted-foreground/70">(assigned by admin)</span></Label>
-              <Input value={`@${profileUsername}`} disabled className="rounded-none bg-muted/50 text-muted-foreground cursor-not-allowed font-mono text-sm" />
+          <div className="space-y-1.5">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Username</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm select-none">@</span>
+              <Input
+                value={profileUsername}
+                onChange={e => setProfileUsername(e.target.value)}
+                placeholder="your_username"
+                className="rounded-none pl-7 font-mono text-sm"
+              />
             </div>
-          )}
+          </div>
           <div className="space-y-1.5">
             <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Phone</Label>
             <Input value={profileForm.phone} onChange={e => setProfileForm(f => ({ ...f, phone: e.target.value }))} placeholder="+254712345678" className="rounded-none" />
