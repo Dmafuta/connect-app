@@ -337,7 +337,7 @@ public class AuthController {
                 return ResponseEntity.status(401).body(new ErrorResponse("Unauthorized"));
             }
             String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), null);
-            RefreshToken rt = refreshTokenService.create(user);
+            var rt = refreshTokenService.create(user);
             return ResponseEntity.ok(new AuthResponse(
                     token, rt.getToken(), user.getEmail(), user.getRole().name(), user.getFullName(), "", ""));
         }
