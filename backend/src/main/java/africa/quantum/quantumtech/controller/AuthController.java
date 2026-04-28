@@ -348,7 +348,7 @@ public class AuthController {
         User user = userRepository.findByEmailAndTenant(email, tenant).orElseThrow();
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), tenant.getId());
-        RefreshToken rt = refreshTokenService.create(user);
+        var rt = refreshTokenService.create(user);
         return ResponseEntity.ok(new AuthResponse(
                 token, rt.getToken(), user.getEmail(), user.getRole().name(), user.getFullName(),
                 tenant.getCode(), tenant.getName()
