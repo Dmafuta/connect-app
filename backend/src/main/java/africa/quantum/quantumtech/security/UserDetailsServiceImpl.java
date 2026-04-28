@@ -34,7 +34,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             user = userRepository.findByEmailAndTenant(email, tenant)
                     .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
         } else {
-            user = userRepository.findByEmail(email)
+            // Platform login — SUPER_ADMIN has tenant IS NULL
+            user = userRepository.findByEmailAndTenantIsNull(email)
                     .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
         }
 
