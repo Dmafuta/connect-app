@@ -4,7 +4,6 @@ import africa.quantum.quantumtech.dto.AuthResponse;
 import africa.quantum.quantumtech.dto.ErrorResponse;
 import africa.quantum.quantumtech.dto.LoginRequest;
 import africa.quantum.quantumtech.dto.RegisterRequest;
-import africa.quantum.quantumtech.model.RefreshToken;
 import africa.quantum.quantumtech.model.Role;
 import africa.quantum.quantumtech.model.Tenant;
 import africa.quantum.quantumtech.model.User;
@@ -363,17 +362,12 @@ public class AuthController {
         if (refreshTokenValue == null) {
             return ResponseEntity.badRequest().body(new ErrorResponse("refreshToken is required"));
         }
-        return refreshTokenService.validate(refreshTokenValue)
-                .map(rt -> {
-                    User user = rt.getUser();
-                    Long tenantId = user.getTenant() != null ? user.getTenant().getId() : null;
-                    String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), tenantId);
-                    // Rotate: revoke old, issue new
-                    refreshTokenService.revoke(refreshTokenValue);
-                    RefreshToken newRt = refreshTokenService.create(user);
+        return refreshTokenService.validateAndRotate(refreshTokenValue)
+                .map(result -> {
+                    String newAccessToken = jwtUtil.generateToken(result.email(), result.role(), result.tenantId());
                     return ResponseEntity.ok(Map.of(
                             "token", newAccessToken,
-                            "refreshToken", newRt.getToken()
+                            "refreshToken", result.newRefreshToken()
                     ));
                 })
                 .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Refresh token is invalid or expired")));
